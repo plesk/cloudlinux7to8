@@ -112,7 +112,14 @@ class Centos2AlmaConverter(DistUpgrader):
                 common_actions.AddInProgressSshLoginMessage(new_os),
             ],
             "Leapp installation": [
-                centos2alma_actions.LeapInstallation(),
+                centos2alma_actions.LeapInstallation(
+                    centos2alma_actions.LEAPP_ALMALINUX_RPM_URL,
+                    [
+                        "leapp-0.14.0-1.el7",
+                        "python2-leapp-0.14.0-1.el7",
+                        "leapp-data-almalinux-0.1-6.el7",
+                    ]
+                ),
             ],
             "Prepare configurations": [
                 common_actions.RevertChangesInGrub(),

@@ -28,7 +28,7 @@ def get_revision(short: bool = True) -> str:
         return revision
 
 
-class Centos2CLConverter(DistUpgrader):
+class CloudLinuxConverter(DistUpgrader):
     _distro_from = dist.CloudLinux("7")
     _distro_to = dist.CloudLinux("8")
 
@@ -60,7 +60,7 @@ class Centos2CLConverter(DistUpgrader):
 
     @property
     def upgrader_name(self) -> str:
-        return "Plesk::Centos2CLConverter"
+        return "Plesk::CloudLinuxConverter"
 
     @property
     def upgrader_version(self) -> str:
@@ -112,7 +112,15 @@ class Centos2CLConverter(DistUpgrader):
                 common_actions.AddInProgressSshLoginMessage(new_os),
             ],
             "Leapp instllation": [
-                centos2alma_actions.CloudLinuxLeappInstallation(),
+                centos2alma_actions.LeapInstallation(
+                    centos2alma_actions.LEAPP_CLOUDLINUX_RPM_URL,
+                    [
+                        "leapp",
+                        "python2-leapp",
+                        "leapp-data-cloudlinux",
+                        "leapp-upgrade"
+                    ]
+                ),
             ],
             "Prepare configurations": [
                 common_actions.RevertChangesInGrub(),
@@ -264,7 +272,7 @@ For assistance, submit an issue here {self.issues_url} and attach the feedback a
         self.disable_spamassasin_plugins = options.disable_spamassasin_plugins
 
 
-class Centos2CLConverterFactory(DistUpgraderFactory):
+class CloudLinuxConverterFactory(DistUpgraderFactory):
     def __init__(self):
         super().__init__()
 
@@ -279,11 +287,11 @@ class Centos2CLConverterFactory(DistUpgraderFactory):
         from_system: typing.Optional[dist.Distro] = None,
         to_system: typing.Optional[dist.Distro] = None
     ) -> bool:
-        return Centos2CLConverter.supports(from_system, to_system)
+        return CloudLinuxConverter.supports(from_system, to_system)
 
     @property
     def upgrader_name(self) -> str:
-        return "Plesk::Centos2CLConverter"
+        return "Plesk::CloudLinuxConverter"
 
     def create_upgrader(self, *args, **kwargs) -> DistUpgrader:
-        return Centos2CLConverter(*args, **kwargs)
+        return CloudLinuxConverter(*args, **kwargs)

@@ -11,5 +11,5 @@ import centos2almaconverter.cl_upgrader
 
 if __name__ == "__main__":
     pleskdistup.registry.register_upgrader(centos2almaconverter.upgrader.Centos2AlmaConverterFactory())
-    pleskdistup.registry.register_upgrader(centos2almaconverter.cl_upgrader.Centos2CLConverterFactory())
+    pleskdistup.registry.register_upgrader(centos2almaconverter.cl_upgrader.CloudLinuxConverterFactory())
     sys.exit(pleskdistup.main.main())
