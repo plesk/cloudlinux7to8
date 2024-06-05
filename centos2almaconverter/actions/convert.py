@@ -8,7 +8,7 @@ class DoCentos2AlmaConvert(action.ActiveAction):
 
     def _prepare_action(self) -> action.ActionResult:
         util.logged_check_call(["/usr/bin/leapp", "preupgrade"])
-        util.logged_check_call(["/usr/bin/leapp", "upgrade"])
+        util.logged_check_call(["/usr/bin/leapp", "upgrade", "--nowarn"])
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:

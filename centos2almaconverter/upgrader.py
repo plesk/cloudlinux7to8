@@ -28,9 +28,9 @@ def get_revision(short: bool = True) -> str:
         return revision
 
 
-class Centos2AlmaConverter(DistUpgrader):
-    _distro_from = dist.CentOs("7")
-    _distro_to = dist.AlmaLinux("8")
+class CloudLinuxConverter(DistUpgrader):
+    _distro_from = dist.CloudLinux("7")
+    _distro_to = dist.CloudLinux("8")
 
     _pre_reboot_delay = 45
 
@@ -60,7 +60,7 @@ class Centos2AlmaConverter(DistUpgrader):
 
     @property
     def upgrader_name(self) -> str:
-        return "Plesk::Centos2AlmaConverter"
+        return "Plesk::CloudLinuxConverter"
 
     @property
     def upgrader_version(self) -> str:
@@ -111,8 +111,16 @@ class Centos2AlmaConverter(DistUpgrader):
                 common_actions.AddFinishSshLoginMessage(new_os),  # Executed at the finish phase only
                 common_actions.AddInProgressSshLoginMessage(new_os),
             ],
-            "Leapp installation": [
-                centos2alma_actions.LeapInstallation(),
+            "Leapp instllation": [
+                centos2alma_actions.LeapInstallation(
+                    centos2alma_actions.LEAPP_CLOUDLINUX_RPM_URL,
+                    [
+                        "leapp",
+                        "python2-leapp",
+                        "leapp-data-cloudlinux",
+                        "leapp-upgrade"
+                    ]
+                ),
             ],
             "Prepare configurations": [
                 common_actions.RevertChangesInGrub(),
@@ -125,7 +133,6 @@ class Centos2AlmaConverter(DistUpgrader):
                 centos2alma_actions.FixupImunify(),
                 centos2alma_actions.PatchLeappErrorOutput(),
                 centos2alma_actions.PatchLeappDebugNonAsciiPackager(),
-                centos2alma_actions.PatchLeappHandleDnfpluginErrorAscii(),
                 common_actions.AddUpgradeSystemdService(os.path.abspath(sys.argv[0]), options),
                 common_actions.UpdatePlesk(),
                 centos2alma_actions.PostgresReinstallModernPackage(),
@@ -135,7 +142,6 @@ class Centos2AlmaConverter(DistUpgrader):
                 common_actions.SetMinDovecotDhParamSize(dhparam_size=2048),
                 common_actions.RestoreDovecotConfiguration(options.state_dir),
                 centos2alma_actions.RecreateAwstatConfigurationFiles(),
-                common_actions.UninstallTuxcareEls(),
             ],
             "Handle plesk related services": [
                 common_actions.DisablePleskRelatedServicesDuringUpgrade(),
@@ -266,7 +272,7 @@ For assistance, submit an issue here {self.issues_url} and attach the feedback a
         self.disable_spamassasin_plugins = options.disable_spamassasin_plugins
 
 
-class Centos2AlmaConverterFactory(DistUpgraderFactory):
+class CloudLinuxConverterFactory(DistUpgraderFactory):
     def __init__(self):
         super().__init__()
 
@@ -281,11 +287,11 @@ class Centos2AlmaConverterFactory(DistUpgraderFactory):
         from_system: typing.Optional[dist.Distro] = None,
         to_system: typing.Optional[dist.Distro] = None
     ) -> bool:
-        return Centos2AlmaConverter.supports(from_system, to_system)
+        return CloudLinuxConverter.supports(from_system, to_system)
 
     @property
     def upgrader_name(self) -> str:
-        return "Plesk::Centos2AlmaConverter"
+        return "Plesk::CloudLinuxConverter"
 
     def create_upgrader(self, *args, **kwargs) -> DistUpgrader:
-        return Centos2AlmaConverter(*args, **kwargs)
+        return CloudLinuxConverter(*args, **kwargs)
