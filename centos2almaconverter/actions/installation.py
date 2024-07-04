@@ -4,20 +4,19 @@ import shutil
 
 from pleskdistup.common import action, rpm, util
 
+LEAPP_CLOUDLINUX_RPM_URL = "https://repo.cloudlinux.com/elevate/elevate-release-latest-el7.noarch.rpm"
+
 
 class LeapInstallation(action.ActiveAction):
 
-    def __init__(self):
+    def __init__(self, elevate_release_rpm_url, pkgs_to_install):
         self.name = "installing leapp"
-        self.pkgs_to_install = [
-            "leapp-0.14.0-1.el7",
-            "python2-leapp-0.14.0-1.el7",
-            "leapp-data-almalinux-0.1-6.el7",
-        ]
+        self.pkgs_to_install = pkgs_to_install
+        self.elevate_release_rpm_url = elevate_release_rpm_url
 
     def _prepare_action(self) -> action.ActionResult:
         if not rpm.is_package_installed("elevate-release"):
-            util.logged_check_call(["/usr/bin/yum", "install", "-y", "https://repo.almalinux.org/elevate/elevate-release-latest-el7.noarch.rpm"])
+            util.logged_check_call(["/usr/bin/yum", "install", "-y", self.elevate_release_rpm_url])
 
         util.logged_check_call(["/usr/bin/yum-config-manager", "--enable", "elevate"])
 
