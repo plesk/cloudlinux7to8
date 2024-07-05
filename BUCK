@@ -11,19 +11,19 @@ genrule(
 
 
 python_binary(
-    name = 'centos2alma.pex',
+    name = 'cloudlinux7to8.pex',
     platform = 'py3',
     build_args = ['--python-shebang', '/usr/bin/env python3'],
-    main_module = 'centos2almaconverter.main',
+    main_module = 'cloudlinux7to8converter.main',
     deps = [
         'dist-upgrader//pleskdistup:lib',
-        '//centos2almaconverter:lib',
+        '//cloudlinux7to8converter:lib',
     ],
 )
 
 genrule(
-    name = 'centos2alma',
-    srcs = [':centos2alma.pex'],
-    out = 'centos2alma',
-    cmd = 'cp $(location :centos2alma.pex) $OUT && chmod +x $OUT',
+    name = 'cloudlinux7to8',
+    srcs = [':cloudlinux7to8.pex'],
+    out = 'cloudlinux7to8',
+    cmd = 'cp $(location :cloudlinux7to8.pex) $OUT && chmod +x $OUT',
 )

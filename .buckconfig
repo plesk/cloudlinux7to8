@@ -7,5 +7,5 @@
 [python#py3]
     interpreter = /usr/bin/python3.6
 [repositories]
-    centos2alma = .
+    cloudlinux7to8 = .
     dist-upgrader = ./dist-upgrader

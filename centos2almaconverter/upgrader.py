@@ -7,7 +7,7 @@ import pkg_resources
 import typing
 import sys
 
-from centos2almaconverter import actions as centos2alma_actions
+from cloudlinux7to8converter import actions as cloudlinux7to8_actions
 from pleskdistup import actions as common_actions
 from pleskdistup.common import action, dist, feedback, files, util
 from pleskdistup.phase import Phase
@@ -68,7 +68,7 @@ class CloudLinuxConverter(DistUpgrader):
 
     @property
     def issues_url(self) -> str:
-        return "https://github.com/plesk/centos2alma/issues"
+        return "https://github.com/plesk/cloudlinux7to8/issues"
 
     def prepare_feedback(
         self,
@@ -112,8 +112,8 @@ class CloudLinuxConverter(DistUpgrader):
                 common_actions.AddInProgressSshLoginMessage(new_os),
             ],
             "Leapp instllation": [
-                centos2alma_actions.LeapInstallation(
-                    centos2alma_actions.LEAPP_CLOUDLINUX_RPM_URL,
+                cloudlinux7to8_actions.LeapInstallation(
+                    cloudlinux7to8_actions.LEAPP_CLOUDLINUX_RPM_URL,
                     [
                         "leapp",
                         "python2-leapp",
@@ -124,51 +124,51 @@ class CloudLinuxConverter(DistUpgrader):
             ],
             "Prepare configurations": [
                 common_actions.RevertChangesInGrub(),
-                centos2alma_actions.PrepareLeappConfigurationBackup(),
-                centos2alma_actions.RemoveOldMigratorThirparty(),
-                centos2alma_actions.LeapReposConfiguration(),
-                centos2alma_actions.LeapChoicesConfiguration(),
-                centos2alma_actions.AdoptKolabRepositories(),
-                centos2alma_actions.AdoptAtomicRepositories(),
-                centos2alma_actions.FixupImunify(),
-                centos2alma_actions.PatchLeappErrorOutput(),
-                centos2alma_actions.PatchLeappDebugNonAsciiPackager(),
+                cloudlinux7to8_actions.PrepareLeappConfigurationBackup(),
+                cloudlinux7to8_actions.RemoveOldMigratorThirparty(),
+                cloudlinux7to8_actions.LeapReposConfiguration(),
+                cloudlinux7to8_actions.LeapChoicesConfiguration(),
+                cloudlinux7to8_actions.AdoptKolabRepositories(),
+                cloudlinux7to8_actions.AdoptAtomicRepositories(),
+                cloudlinux7to8_actions.FixupImunify(),
+                cloudlinux7to8_actions.PatchLeappErrorOutput(),
+                cloudlinux7to8_actions.PatchLeappDebugNonAsciiPackager(),
                 common_actions.AddUpgradeSystemdService(os.path.abspath(sys.argv[0]), options),
                 common_actions.UpdatePlesk(),
-                centos2alma_actions.PostgresReinstallModernPackage(),
-                centos2alma_actions.FixNamedConfig(),
+                cloudlinux7to8_actions.PostgresReinstallModernPackage(),
+                cloudlinux7to8_actions.FixNamedConfig(),
                 common_actions.DisablePleskSshBanner(),
-                centos2alma_actions.FixSyslogLogrotateConfig(options.state_dir),
+                cloudlinux7to8_actions.FixSyslogLogrotateConfig(options.state_dir),
                 common_actions.SetMinDovecotDhParamSize(dhparam_size=2048),
                 common_actions.RestoreDovecotConfiguration(options.state_dir),
-                centos2alma_actions.RecreateAwstatConfigurationFiles(),
+                cloudlinux7to8_actions.RecreateAwstatConfigurationFiles(),
             ],
             "Handle plesk related services": [
                 common_actions.DisablePleskRelatedServicesDuringUpgrade(),
             ],
             "Handle packages and services": [
-                centos2alma_actions.FixOsVendorPhpFpmConfiguration(),
+                cloudlinux7to8_actions.FixOsVendorPhpFpmConfiguration(),
                 common_actions.RebundleRubyApplications(),
-                centos2alma_actions.RemovingPleskConflictPackages(),
-                centos2alma_actions.ReinstallPleskComponents(),
-                centos2alma_actions.ReinstallConflictPackages(options.state_dir),
-                centos2alma_actions.ReinstallPerlCpanModules(options.state_dir),
-                centos2alma_actions.DisableSuspiciousKernelModules(),
+                cloudlinux7to8_actions.RemovingPleskConflictPackages(),
+                cloudlinux7to8_actions.ReinstallPleskComponents(),
+                cloudlinux7to8_actions.ReinstallConflictPackages(options.state_dir),
+                cloudlinux7to8_actions.ReinstallPerlCpanModules(options.state_dir),
+                cloudlinux7to8_actions.DisableSuspiciousKernelModules(),
                 common_actions.HandleUpdatedSpamassassinConfig(),
                 common_actions.DisableSelinuxDuringUpgrade(),
-                centos2alma_actions.RestoreMissingNginx(),
+                cloudlinux7to8_actions.RestoreMissingNginx(),
             ],
             "First plesk start": [
                 common_actions.StartPleskBasicServices(),
             ],
             "Update databases": [
-                centos2alma_actions.UpdateMariadbDatabase(),
-                centos2alma_actions.UpdateModernMariadb(),
-                centos2alma_actions.AddMysqlConnector(),
+                cloudlinux7to8_actions.UpdateMariadbDatabase(),
+                cloudlinux7to8_actions.UpdateModernMariadb(),
+                cloudlinux7to8_actions.AddMysqlConnector(),
             ],
             "Do convert": [
-                centos2alma_actions.AdoptRepositories(),
-                centos2alma_actions.DoCentos2AlmaConvert(),
+                cloudlinux7to8_actions.AdoptRepositories(),
+                cloudlinux7to8_actions.DoCentos2AlmaConvert(),
             ],
             "Pause before reboot": [
             ],
@@ -185,7 +185,7 @@ class CloudLinuxConverter(DistUpgrader):
             actions_map = util.merge_dicts_of_lists(actions_map, {
                 "Pause before reboot": [
                     common_actions.PreRebootPause(
-                        REBOOT_WARN_MESSAGE.format(delay=self._pre_reboot_delay, util_name="centos2alma"),
+                        REBOOT_WARN_MESSAGE.format(delay=self._pre_reboot_delay, util_name="cloudlinux7to8"),
                         self._pre_reboot_delay
                     ),
                 ]
@@ -194,7 +194,7 @@ class CloudLinuxConverter(DistUpgrader):
         if self.upgrade_postgres_allowed:
             actions_map = util.merge_dicts_of_lists(actions_map, {
                 "Prepare configurations": [
-                    centos2alma_actions.PostgresDatabasesUpdate(),
+                    cloudlinux7to8_actions.PostgresDatabasesUpdate(),
                 ]
             })
 
@@ -202,34 +202,34 @@ class CloudLinuxConverter(DistUpgrader):
 
     def get_check_actions(self, options: typing.Any, phase: Phase) -> typing.List[action.CheckAction]:
         if phase is Phase.FINISH:
-            return [centos2alma_actions.AssertDistroIsAlmalinux8()]
+            return [cloudlinux7to8_actions.AssertDistroIsAlmalinux8()]
 
         FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION = "7.1"
         checks = [
             common_actions.AssertPleskVersionIsAvailable(),
             common_actions.AssertPleskInstallerNotInProgress(),
-            centos2alma_actions.AssertAvailableSpace(),
+            cloudlinux7to8_actions.AssertAvailableSpace(),
             common_actions.AssertMinPhpVersionInstalled(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertMinPhpVersionUsedByWebsites(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertMinPhpVersionUsedByCron(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertOsVendorPhpUsedByWebsites(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertGrubInstalled(),
-            centos2alma_actions.AssertNoMoreThenOneKernelNamedNIC(),
-            centos2alma_actions.AssertRedHatKernelInstalled(),
-            centos2alma_actions.AssertLastInstalledKernelInUse(),
-            centos2alma_actions.AssertLocalRepositoryNotPresent(),
-            centos2alma_actions.AssertThereIsNoRepositoryDuplicates(),
-            centos2alma_actions.AssertMariadbRepoAvailable(),
+            cloudlinux7to8_actions.AssertNoMoreThenOneKernelNamedNIC(),
+            cloudlinux7to8_actions.AssertRedHatKernelInstalled(),
+            cloudlinux7to8_actions.AssertLastInstalledKernelInUse(),
+            cloudlinux7to8_actions.AssertLocalRepositoryNotPresent(),
+            cloudlinux7to8_actions.AssertThereIsNoRepositoryDuplicates(),
+            cloudlinux7to8_actions.AssertMariadbRepoAvailable(),
             common_actions.AssertNotInContainer(),
-            centos2alma_actions.AssertPackagesUpToDate(),
-            centos2alma_actions.CheckOutdatedLetsencryptExtensionRepository(),
-            centos2alma_actions.AssertPleskRepositoriesNotNoneLink(),
+            cloudlinux7to8_actions.AssertPackagesUpToDate(),
+            cloudlinux7to8_actions.CheckOutdatedLetsencryptExtensionRepository(),
+            cloudlinux7to8_actions.AssertPleskRepositoriesNotNoneLink(),
         ]
 
         if not self.upgrade_postgres_allowed:
-            checks.append(centos2alma_actions.AssertOutdatedPostgresNotInstalled())
+            checks.append(cloudlinux7to8_actions.AssertOutdatedPostgresNotInstalled())
         if not self.remove_unknown_perl_modules:
-            checks.append(centos2alma_actions.AssertThereIsNoUnknownPerlCpanModules())
+            checks.append(cloudlinux7to8_actions.AssertThereIsNoUnknownPerlCpanModules())
         if not self.disable_spamassasin_plugins:
             checks.append(common_actions.AssertSpamassassinAdditionalPluginsDisabled())
 
@@ -244,7 +244,7 @@ class CloudLinuxConverter(DistUpgrader):
 
 To see the detailed plan, run the utility with the --show-plan option.
 
-The script writes a log to the /var/log/plesk/centos2alma.log file. If there are any issues, you can find more information in the log file.
+The script writes a log to the /var/log/plesk/cloudlinux7to8.log file. If there are any issues, you can find more information in the log file.
 For assistance, submit an issue here {self.issues_url} and attach the feedback archive generated with --prepare-feedback or at least the log file..
 """
         parser = argparse.ArgumentParser(

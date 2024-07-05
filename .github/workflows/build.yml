@@ -13,14 +13,14 @@ jobs:
         submodules: recursive
     - name: Prepare artifact store
       run: mkdir -p ./buck-out/gen
-    - name: Build centos2alma
+    - name: Build cloudlinux7to8
       id: build
       uses: SandakovMM/build-with-buck@v3
       with:
         command: build
-        target: :centos2alma
+        target: :cloudlinux7to8
     - name: Store result
       uses: actions/upload-artifact@v3
       with:
-        name: centos2alma
-        path: ./buck-out/gen/centos2alma
+        name: cloudlinux7to8
+        path: ./buck-out/gen/cloudlinux7to8

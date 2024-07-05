@@ -81,7 +81,7 @@ class ReinstallConflictPackages(action.ActiveAction):
 
     def __init__(self, temp_directory: str):
         self.name = "re-installing common conflict packages"
-        self.removed_packages_file = temp_directory + "/centos2alma_removed_packages.txt"
+        self.removed_packages_file = temp_directory + "/cloudlinux7to8_removed_packages.txt"
         self.conflict_pkgs_map = {
             "galera": "galera",
             "python36-argcomplete": "python3-argcomplete",

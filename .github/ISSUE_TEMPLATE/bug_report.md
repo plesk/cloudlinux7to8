@@ -12,5 +12,5 @@ A clear and concise description of what the bug is.
 
 **Feedback archive**
 *Please attach a feedback archive to the bug report.*
-You could create it by calling `centos2alma --prepare-feedback`.
+You could create it by calling `cloudlinux7to8 --prepare-feedback`.
 The archive will help us investigate the problem better and faster.

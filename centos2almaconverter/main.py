@@ -6,8 +6,8 @@ import sys
 import pleskdistup.main
 import pleskdistup.registry
 
-import centos2almaconverter.upgrader
+import cloudlinux7to8converter.upgrader
 
 if __name__ == "__main__":
-    pleskdistup.registry.register_upgrader(centos2almaconverter.upgrader.CloudLinuxConverterFactory())
+    pleskdistup.registry.register_upgrader(cloudlinux7to8converter.upgrader.CloudLinuxConverterFactory())
     sys.exit(pleskdistup.main.main())

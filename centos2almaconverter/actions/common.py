@@ -22,7 +22,7 @@ class FixNamedConfig(action.ActiveAction):
 
         if os.path.getsize(self.chrooted_file_path) == 0:
             with open(self.chrooted_file_path, "w") as f:
-                f.write("# centos2alma workaround commentary")
+                f.write("# cloudlinux7to8 workaround commentary")
 
         return action.ActionResult()
 
@@ -31,7 +31,7 @@ class FixNamedConfig(action.ActiveAction):
             os.unlink(self.user_options_path)
 
         with open(self.chrooted_file_path, "r") as f:
-            if f.read() == "# centos2alma workaround commentary":
+            if f.read() == "# cloudlinux7to8 workaround commentary":
                 os.unlink(self.chrooted_file_path)
                 with open(self.chrooted_file_path, "w") as _:
                     pass
