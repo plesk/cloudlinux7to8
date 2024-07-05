@@ -1,4 +1,4 @@
-# Copyright 1999-2024. WebPros International GmbH. All rights reserved.
+# Copyright 2024. WebPros International GmbH. All rights reserved.
 # vim:ft=python:
 
 PRODUCT_VERSION = '1.3.1'
