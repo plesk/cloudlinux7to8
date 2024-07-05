@@ -1,34 +1,20 @@
 # Copyright 2024. WebPros International GmbH. All rights reserved.
 
 import argparse
-import json
 import os
-import pkg_resources
 import typing
-import sys
 
-from cloudlinux7to8converter import actions as cloudlinux7to8_actions
 from pleskdistup import actions as common_actions
 from pleskdistup.common import action, dist, feedback, files, util
 from pleskdistup.phase import Phase
 from pleskdistup.messages import REBOOT_WARN_MESSAGE
 from pleskdistup.upgrader import DistUpgrader, DistUpgraderFactory, PathType
 
-
-def get_version() -> str:
-    with pkg_resources.resource_stream(__name__, "version.json") as f:
-        return json.load(f)["version"]
+import cloudlinux7to8.config
+from cloudlinux7to8 import actions as custom_actions
 
 
-def get_revision(short: bool = True) -> str:
-    with pkg_resources.resource_stream(__name__, "version.json") as f:
-        revision = json.load(f)["revision"]
-        if short:
-            revision = revision[:8]
-        return revision
-
-
-class CloudLinuxConverter(DistUpgrader):
+class CloudLinux7to8Upgrader(DistUpgrader):
     _distro_from = dist.CloudLinux("7")
     _distro_to = dist.CloudLinux("8")
 
@@ -42,7 +28,10 @@ class CloudLinuxConverter(DistUpgrader):
         self.disable_spamassasin_plugins = False
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(From {self._distro_from}, To {self._distro_to})"
+        attrs = ", ".join(f"{k}={getattr(self, k)!r}" for k in (
+            "_distro_from", "_distro_to",
+        ))
+        return f"{self.__class__.__name__}({attrs})"
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}"
@@ -60,11 +49,11 @@ class CloudLinuxConverter(DistUpgrader):
 
     @property
     def upgrader_name(self) -> str:
-        return "Plesk::CloudLinuxConverter"
+        return "Plesk::CloudLinux7to8Upgrader"
 
     @property
     def upgrader_version(self) -> str:
-        return get_version() + "-" + get_revision()
+        return cloudlinux7to8.config.revision
 
     @property
     def issues_url(self) -> str:
@@ -111,9 +100,9 @@ class CloudLinuxConverter(DistUpgrader):
                 common_actions.AddFinishSshLoginMessage(new_os),  # Executed at the finish phase only
                 common_actions.AddInProgressSshLoginMessage(new_os),
             ],
-            "Leapp instllation": [
-                cloudlinux7to8_actions.LeapInstallation(
-                    cloudlinux7to8_actions.LEAPP_CLOUDLINUX_RPM_URL,
+            "Leapp installation": [
+                custom_actions.LeapInstallation(
+                    custom_actions.LEAPP_CLOUDLINUX_RPM_URL,
                     [
                         "leapp",
                         "python2-leapp",
@@ -124,51 +113,54 @@ class CloudLinuxConverter(DistUpgrader):
             ],
             "Prepare configurations": [
                 common_actions.RevertChangesInGrub(),
-                cloudlinux7to8_actions.PrepareLeappConfigurationBackup(),
-                cloudlinux7to8_actions.RemoveOldMigratorThirparty(),
-                cloudlinux7to8_actions.LeapReposConfiguration(),
-                cloudlinux7to8_actions.LeapChoicesConfiguration(),
-                cloudlinux7to8_actions.AdoptKolabRepositories(),
-                cloudlinux7to8_actions.AdoptAtomicRepositories(),
-                cloudlinux7to8_actions.FixupImunify(),
-                cloudlinux7to8_actions.PatchLeappErrorOutput(),
-                cloudlinux7to8_actions.PatchLeappDebugNonAsciiPackager(),
-                common_actions.AddUpgradeSystemdService(os.path.abspath(sys.argv[0]), options),
+                custom_actions.PrepareLeappConfigurationBackup(),
+                custom_actions.RemoveOldMigratorThirparty(),
+                custom_actions.LeapReposConfiguration(),
+                custom_actions.LeapChoicesConfiguration(),
+                custom_actions.AdoptKolabRepositories(),
+                custom_actions.AdoptAtomicRepositories(),
+                custom_actions.FixupImunify(),
+                custom_actions.PatchLeappErrorOutput(),
+                custom_actions.PatchLeappDebugNonAsciiPackager(),
+                common_actions.AddUpgradeSystemdService(
+                    os.path.abspath(upgrader_bin_path),
+                    options,
+                ),
                 common_actions.UpdatePlesk(),
-                cloudlinux7to8_actions.PostgresReinstallModernPackage(),
-                cloudlinux7to8_actions.FixNamedConfig(),
+                custom_actions.PostgresReinstallModernPackage(),
+                custom_actions.FixNamedConfig(),
                 common_actions.DisablePleskSshBanner(),
-                cloudlinux7to8_actions.FixSyslogLogrotateConfig(options.state_dir),
+                custom_actions.FixSyslogLogrotateConfig(options.state_dir),
                 common_actions.SetMinDovecotDhParamSize(dhparam_size=2048),
                 common_actions.RestoreDovecotConfiguration(options.state_dir),
-                cloudlinux7to8_actions.RecreateAwstatConfigurationFiles(),
+                custom_actions.RecreateAwstatConfigurationFiles(),
             ],
             "Handle plesk related services": [
                 common_actions.DisablePleskRelatedServicesDuringUpgrade(),
             ],
             "Handle packages and services": [
-                cloudlinux7to8_actions.FixOsVendorPhpFpmConfiguration(),
+                custom_actions.FixOsVendorPhpFpmConfiguration(),
                 common_actions.RebundleRubyApplications(),
-                cloudlinux7to8_actions.RemovingPleskConflictPackages(),
-                cloudlinux7to8_actions.ReinstallPleskComponents(),
-                cloudlinux7to8_actions.ReinstallConflictPackages(options.state_dir),
-                cloudlinux7to8_actions.ReinstallPerlCpanModules(options.state_dir),
-                cloudlinux7to8_actions.DisableSuspiciousKernelModules(),
+                custom_actions.RemovingPleskConflictPackages(),
+                custom_actions.ReinstallPleskComponents(),
+                custom_actions.ReinstallConflictPackages(options.state_dir),
+                custom_actions.ReinstallPerlCpanModules(options.state_dir),
+                custom_actions.DisableSuspiciousKernelModules(),
                 common_actions.HandleUpdatedSpamassassinConfig(),
                 common_actions.DisableSelinuxDuringUpgrade(),
-                cloudlinux7to8_actions.RestoreMissingNginx(),
+                custom_actions.RestoreMissingNginx(),
             ],
             "First plesk start": [
                 common_actions.StartPleskBasicServices(),
             ],
             "Update databases": [
-                cloudlinux7to8_actions.UpdateMariadbDatabase(),
-                cloudlinux7to8_actions.UpdateModernMariadb(),
-                cloudlinux7to8_actions.AddMysqlConnector(),
+                custom_actions.UpdateMariadbDatabase(),
+                custom_actions.UpdateModernMariadb(),
+                custom_actions.AddMysqlConnector(),
             ],
             "Do convert": [
-                cloudlinux7to8_actions.AdoptRepositories(),
-                cloudlinux7to8_actions.DoCentos2AlmaConvert(),
+                custom_actions.AdoptRepositories(),
+                custom_actions.DoCentos2AlmaConvert(),
             ],
             "Pause before reboot": [
             ],
@@ -194,58 +186,67 @@ class CloudLinuxConverter(DistUpgrader):
         if self.upgrade_postgres_allowed:
             actions_map = util.merge_dicts_of_lists(actions_map, {
                 "Prepare configurations": [
-                    cloudlinux7to8_actions.PostgresDatabasesUpdate(),
+                    custom_actions.PostgresDatabasesUpdate(),
                 ]
             })
 
         return actions_map
 
-    def get_check_actions(self, options: typing.Any, phase: Phase) -> typing.List[action.CheckAction]:
+    def get_check_actions(
+        self,
+        options: typing.Any,
+        phase: Phase
+    ) -> typing.List[action.CheckAction]:
         if phase is Phase.FINISH:
-            return [cloudlinux7to8_actions.AssertDistroIsAlmalinux8()]
+            return [custom_actions.AssertDistroIsAlmalinux8()]
 
         FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION = "7.1"
         checks = [
             common_actions.AssertPleskVersionIsAvailable(),
             common_actions.AssertPleskInstallerNotInProgress(),
-            cloudlinux7to8_actions.AssertAvailableSpace(),
+            custom_actions.AssertAvailableSpace(),
             common_actions.AssertMinPhpVersionInstalled(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertMinPhpVersionUsedByWebsites(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertMinPhpVersionUsedByCron(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertOsVendorPhpUsedByWebsites(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertGrubInstalled(),
-            cloudlinux7to8_actions.AssertNoMoreThenOneKernelNamedNIC(),
-            cloudlinux7to8_actions.AssertRedHatKernelInstalled(),
-            cloudlinux7to8_actions.AssertLastInstalledKernelInUse(),
-            cloudlinux7to8_actions.AssertLocalRepositoryNotPresent(),
-            cloudlinux7to8_actions.AssertThereIsNoRepositoryDuplicates(),
-            cloudlinux7to8_actions.AssertMariadbRepoAvailable(),
+            custom_actions.AssertNoMoreThenOneKernelNamedNIC(),
+            custom_actions.AssertRedHatKernelInstalled(),
+            custom_actions.AssertLastInstalledKernelInUse(),
+            custom_actions.AssertLocalRepositoryNotPresent(),
+            custom_actions.AssertThereIsNoRepositoryDuplicates(),
+            custom_actions.AssertMariadbRepoAvailable(),
             common_actions.AssertNotInContainer(),
-            cloudlinux7to8_actions.AssertPackagesUpToDate(),
-            cloudlinux7to8_actions.CheckOutdatedLetsencryptExtensionRepository(),
-            cloudlinux7to8_actions.AssertPleskRepositoriesNotNoneLink(),
+            custom_actions.AssertPackagesUpToDate(),
+            custom_actions.CheckOutdatedLetsencryptExtensionRepository(),
+            custom_actions.AssertPleskRepositoriesNotNoneLink(),
         ]
 
         if not self.upgrade_postgres_allowed:
-            checks.append(cloudlinux7to8_actions.AssertOutdatedPostgresNotInstalled())
+            checks.append(custom_actions.AssertOutdatedPostgresNotInstalled())
         if not self.remove_unknown_perl_modules:
-            checks.append(cloudlinux7to8_actions.AssertThereIsNoUnknownPerlCpanModules())
+            checks.append(custom_actions.AssertThereIsNoUnknownPerlCpanModules())
         if not self.disable_spamassasin_plugins:
             checks.append(common_actions.AssertSpamassassinAdditionalPluginsDisabled())
 
         return checks
 
     def parse_args(self, args: typing.Sequence[str]) -> None:
-        DESC_MESSAGE = f"""Use this script to convert {str(self._distro_from)} server with Plesk to {str(self._distro_to)}. The process consists of the following general stages:
+        DESC_MESSAGE = f"""Use this upgrader to convert {self._distro_from} server with Plesk to {self._distro_to}.
+The process consists of the following general stages:
 
-- Preparation (about 20 minutes) - The Leapp utility is installed and configured. The OS is prepared for the conversion. The Leapp utility is then called to create a temporary OS distribution.
-- Conversion (about 20 minutes)  - The conversion takes place. During this stage, you cannot connect to the server via SSH.
-- Finalization (about 5 minutes) - The server is returned to normal operation.
+-- Preparation (about 20 minutes) - The Leapp utility is installed and configured.
+   The OS is prepared for the conversion. The Leapp utility is then called to
+   create a temporary OS distribution.
+-- Conversion (about 20 minutes) - The conversion takes place. During this stage,
+   you cannot connect to the server via SSH.
+-- Finalization (about 5 minutes) - The server is returned to normal operation.
 
 To see the detailed plan, run the utility with the --show-plan option.
 
-The script writes a log to the /var/log/plesk/cloudlinux7to8.log file. If there are any issues, you can find more information in the log file.
-For assistance, submit an issue here {self.issues_url} and attach the feedback archive generated with --prepare-feedback or at least the log file..
+For assistance, submit an issue here {self.issues_url}
+and attach the feedback archive generated with --prepare-feedback or at least
+the log file.
 """
         parser = argparse.ArgumentParser(
             usage=argparse.SUPPRESS,
@@ -255,16 +256,24 @@ For assistance, submit an issue here {self.issues_url} and attach the feedback a
         )
         parser.add_argument(
             "-h", "--help", action="help", default=argparse.SUPPRESS,
-            help=argparse.SUPPRESS,
+            help=argparse.SUPPRESS
         )
-        parser.add_argument("--upgrade-postgres", action="store_true", dest="upgrade_postgres_allowed", default=False,
-                            help="Upgrade all hosted PostgreSQL databases. To avoid data loss, create backups of all "
-                                 "hosted PostgreSQL databases before calling this option.")
-        parser.add_argument("--remove-unknown-perl-modules", action="store_true", dest="remove_unknown_perl_modules", default=False,
-                            help="Allow to remove unknown perl modules installed from cpan. In this case all modules installed "
-                                 "by cpan will be removed. Note that it could lead to some issues with perl scripts")
-        parser.add_argument("--disable-spamassasin-plugins", action="store_true", dest="disable_spamassasin_plugins", default=False,
-                            help="Disable additional plugins in spamassasin configuration during the conversion.")
+        parser.add_argument(
+            "--upgrade-postgres", action="store_true", dest="upgrade_postgres_allowed", default=False,
+            help="Upgrade all hosted PostgreSQL databases. To avoid data loss, create backups of all "
+                 "hosted PostgreSQL databases before calling this option."
+        )
+        parser.add_argument(
+            "--remove-unknown-perl-modules", action="store_true",
+            dest="remove_unknown_perl_modules", default=False,
+            help="Allow to remove unknown perl modules installed from CPAN. In this case all modules installed "
+                 "by CPAN will be removed. Note that it could lead to some issues with perl scripts"
+        )
+        parser.add_argument(
+            "--disable-spamassasin-plugins", action="store_true",
+            dest="disable_spamassasin_plugins", default=False,
+            help="Disable additional plugins in spamassasin configuration during the conversion."
+        )
         options = parser.parse_args(args)
 
         self.upgrade_postgres_allowed = options.upgrade_postgres_allowed
@@ -272,7 +281,7 @@ For assistance, submit an issue here {self.issues_url} and attach the feedback a
         self.disable_spamassasin_plugins = options.disable_spamassasin_plugins
 
 
-class CloudLinuxConverterFactory(DistUpgraderFactory):
+class CloudLinux7to8UpgraderFactory(DistUpgraderFactory):
     def __init__(self):
         super().__init__()
 
@@ -287,11 +296,11 @@ class CloudLinuxConverterFactory(DistUpgraderFactory):
         from_system: typing.Optional[dist.Distro] = None,
         to_system: typing.Optional[dist.Distro] = None
     ) -> bool:
-        return CloudLinuxConverter.supports(from_system, to_system)
+        return CloudLinux7to8Upgrader.supports(from_system, to_system)
 
     @property
     def upgrader_name(self) -> str:
-        return "Plesk::CloudLinuxConverter"
+        return "Plesk::CloudLinux7to8Upgrader"
 
     def create_upgrader(self, *args, **kwargs) -> DistUpgrader:
-        return CloudLinuxConverter(*args, **kwargs)
+        return CloudLinux7to8Upgrader(*args, **kwargs)
