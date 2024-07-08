@@ -114,7 +114,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             "Prepare configurations": [
                 common_actions.RevertChangesInGrub(),
                 custom_actions.PrepareLeappConfigurationBackup(),
-                custom_actions.RemoveOldMigratorThirparty(),
+                custom_actions.RemoveOldMigratorThirdparty(),
                 custom_actions.LeapReposConfiguration(),
                 custom_actions.LeapChoicesConfiguration(),
                 custom_actions.AdoptKolabRepositories(),

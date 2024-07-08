@@ -245,7 +245,7 @@ class AssertPleskRepositoriesNotNoneLink(action.CheckAction):
         return False
 
 
-class RemoveOldMigratorThirparty(action.ActiveAction):
+class RemoveOldMigratorThirdparty(action.ActiveAction):
     def __init__(self):
         self.name = "removing old migrator thirdparty packages"
 
