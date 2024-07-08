@@ -1,0 +1,23 @@
+name: MyPy Lint
+on:
+  push
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          # We use tags to determine version, so fetch them
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install mypy
+        run: pip install mypy
+      - name: Perform mypy lint of the pleskdistup package
+        run: mypy --package cloudlinux7to8
