@@ -20,7 +20,7 @@ class AssertDistroIsCentos79(action.CheckAction):
 """
 
     def _do_check(self) -> bool:
-        distro = platform.linux_distribution()
+        distro = platform.linux_distribution()  # type: ignore[attr-defined]
         major_version, minor_version = distro[1].split(".")[:2]
         if distro[0] == "CentOS Linux" and int(major_version) == 7 and int(minor_version) == 9:
             return True
@@ -81,8 +81,7 @@ class AssertLastInstalledKernelInUse(action.CheckAction):
         ).splitlines()
 
         log.debug("Installed kernel versions: {}".format(', '.join(versions)))
-        versions = [version.KernelVersion(ver) for ver in versions]
-        return max(versions)
+        return max([version.KernelVersion(ver) for ver in versions])
 
     def _do_check(self) -> bool:
         last_installed_kernel_version = self._get_last_installed_kernel_version()

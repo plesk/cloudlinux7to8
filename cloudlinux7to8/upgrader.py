@@ -94,7 +94,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
     ) -> typing.Dict[str, typing.List[action.ActiveAction]]:
         new_os = str(self._distro_to)
 
-        actions_map = {
+        actions_map: typing.Dict[str, typing.List[action.ActiveAction]] = {
             "Status informing": [
                 common_actions.HandleConversionStatus(options.status_flag_path, options.completion_flag_path),
                 common_actions.AddFinishSshLoginMessage(new_os),  # Executed at the finish phase only
@@ -164,13 +164,13 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             ],
             "Pause before reboot": [
             ],
-            "Reboot": {
+            "Reboot": [
                 common_actions.Reboot(
                     prepare_next_phase=Phase.FINISH,
                     post_reboot=action.RebootType.AFTER_LAST_STAGE,
                     name="reboot and perform finishing actions",
                 )
-            }
+            ]
         }
 
         if not options.no_reboot:
@@ -281,7 +281,7 @@ the log file.
         self.disable_spamassasin_plugins = options.disable_spamassasin_plugins
 
 
-class CloudLinux7to8UpgraderFactory(DistUpgraderFactory):
+class CloudLinux7to8Factory(DistUpgraderFactory):
     def __init__(self):
         super().__init__()
 
