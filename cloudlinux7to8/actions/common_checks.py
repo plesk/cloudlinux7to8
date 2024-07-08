@@ -186,7 +186,7 @@ class AssertAvailableSpace(action.CheckAction):
         self.name = "checking available space"
         self.required_space = 5 * 1024 * 1024 * 1024  # 5GB
         self.description = """There is insufficient disk space available. Leapp requires a minimum of {} of free space
-\ton the disk where the '/var/lib' directory is located. Available space: {}. 
+\ton the disk where the '/var/lib' directory is located. Available space: {}.
 \tFree up enough disk space and try again.
 """
 

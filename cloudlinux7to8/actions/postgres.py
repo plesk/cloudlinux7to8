@@ -88,7 +88,7 @@ class PostgresReinstallModernPackage(action.ActiveAction):
         for major_version in self._get_versions():
             service_name = 'postgresql-' + str(major_version)
             if self._is_service_active(service_name):
-                with open(os.path.join(postgres.get_phsql_root_path(), str(major_version)) + '.enabled', 'w') as fp:
+                with open(os.path.join(postgres.get_phsql_root_path(), str(major_version)) + '.enabled', 'w'):
                     pass
                 util.logged_check_call(['/usr/bin/systemctl', 'stop', service_name])
                 util.logged_check_call(['/usr/bin/systemctl', 'disable', service_name])

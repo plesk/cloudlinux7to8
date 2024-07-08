@@ -2,7 +2,7 @@
 import os
 import shutil
 
-from pleskdistup.common import action, files, log, motd, plesk, rpm
+from pleskdistup.common import action, files, log, motd, rpm
 
 CPAN_MODULES_DIRECTORY = "/usr/local/lib64/perl5"
 CPAN_MODULES_RPM_MAPPING = {

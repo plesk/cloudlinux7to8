@@ -171,8 +171,6 @@ class ReinstallConflictPackages(action.ActiveAction):
         return 60 + 10 * pkgs_number
 
 
-
-
 CHANGED_REPOS_MSG_FMT = """During the conversion, some of customized .repo files were updated. You can find the old
 files with the .rpmsave extension. Below is a list of the changed files:
 \t{changed_files}
