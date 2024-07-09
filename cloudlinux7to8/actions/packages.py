@@ -248,8 +248,11 @@ class RemoveOldMigratorThirdparty(action.ActiveAction):
     def __init__(self) -> None:
         self.name = "removing old migrator thirdparty packages"
 
+    def _find_migrator_repo_files(self) -> typing.List[str]:
+        return files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*migrator*.repo"])
+
     def _is_required(self) -> bool:
-        for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*migrator*.repo"]):
+        for file in self._find_migrator_repo_files():
             for _1, _2, url, _3, _4, _5 in rpm.extract_repodata(file):
                 if url and "PMM_0.1.10/thirdparty-rpm" in url:
                     return True
@@ -257,7 +260,7 @@ class RemoveOldMigratorThirdparty(action.ActiveAction):
         return False
 
     def _prepare_action(self) -> action.ActionResult:
-        for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*migrator*.repo"]):
+        for file in self._find_migrator_repo_files():
             files.backup_file(file)
 
             rpm.remove_repositories(file, [
@@ -266,12 +269,12 @@ class RemoveOldMigratorThirdparty(action.ActiveAction):
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
-        for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*migrator*.repo"]):
+        for file in self._find_migrator_repo_files():
             files.remove_backup(file)
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
-        for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*migrator*.repo"]):
+        for file in self._find_migrator_repo_files():
             files.restore_file_from_backup(file)
         return action.ActionResult()
 
