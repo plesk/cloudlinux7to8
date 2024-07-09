@@ -1,6 +1,7 @@
 # Copyright 2024. WebPros International GmbH. All rights reserved.
 import os
 import shutil
+import typing
 
 from pleskdistup.common import action, rpm, util
 
@@ -8,8 +9,10 @@ LEAPP_CLOUDLINUX_RPM_URL = "https://repo.cloudlinux.com/elevate/elevate-release-
 
 
 class LeappInstallation(action.ActiveAction):
+    pkgs_to_install: typing.List[str]
+    elevate_release_rpm_url: str
 
-    def __init__(self, elevate_release_rpm_url, pkgs_to_install):
+    def __init__(self, elevate_release_rpm_url: str, pkgs_to_install: typing.List[str]):
         self.name = "installing leapp"
         self.pkgs_to_install = pkgs_to_install
         self.elevate_release_rpm_url = elevate_release_rpm_url
