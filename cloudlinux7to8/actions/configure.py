@@ -37,7 +37,7 @@ class PrepareLeappConfigurationBackup(action.ActiveAction):
         return action.ActionResult()
 
 
-class LeapReposConfiguration(action.ActiveAction):
+class LeappReposConfiguration(action.ActiveAction):
 
     def __init__(self) -> None:
         self.name = "map plesk repositories for leapp"
@@ -59,7 +59,7 @@ class LeapReposConfiguration(action.ActiveAction):
         return action.ActionResult()
 
 
-class LeapChoicesConfiguration(action.ActiveAction):
+class LeappChoicesConfiguration(action.ActiveAction):
     answer_file_path: str
 
     def __init__(self) -> None:
