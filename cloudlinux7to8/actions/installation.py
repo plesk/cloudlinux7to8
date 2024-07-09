@@ -7,7 +7,7 @@ from pleskdistup.common import action, rpm, util
 LEAPP_CLOUDLINUX_RPM_URL = "https://repo.cloudlinux.com/elevate/elevate-release-latest-el7.noarch.rpm"
 
 
-class LeapInstallation(action.ActiveAction):
+class LeappInstallation(action.ActiveAction):
 
     def __init__(self, elevate_release_rpm_url, pkgs_to_install):
         self.name = "installing leapp"

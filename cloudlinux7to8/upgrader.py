@@ -101,7 +101,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.AddInProgressSshLoginMessage(new_os),
             ],
             "Leapp installation": [
-                custom_actions.LeapInstallation(
+                custom_actions.LeappInstallation(
                     custom_actions.LEAPP_CLOUDLINUX_RPM_URL,
                     [
                         "leapp",
