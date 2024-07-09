@@ -2,29 +2,10 @@
 
 import collections
 import os
-import platform
 import shutil
 import subprocess
 
 from pleskdistup.common import action, dist, files, log, version
-
-
-# Todo. Action is not relevant now, because we checking the same thing of framework side
-# Additionaly platrofm module has no linux_distribution method in modern version of python
-# so we should migrate to our common.distro
-class AssertDistroIsCentos79(action.CheckAction):
-    def __init__(self):
-        self.name = "checking if distro is CentOS7"
-        self.description = """You are running a distributive other than CentOS 7.9. At the moment, only CentOS 7.9 is supported.
-\tIf you are running an earlier Centos 7 release, update to Centos 7.9 and try again.
-"""
-
-    def _do_check(self) -> bool:
-        distro = platform.linux_distribution()  # type: ignore[attr-defined]
-        major_version, minor_version = distro[1].split(".")[:2]
-        if distro[0] == "CentOS Linux" and int(major_version) == 7 and int(minor_version) == 9:
-            return True
-        return False
 
 
 class AssertDistroIsAlmalinux8(action.CheckAction):
