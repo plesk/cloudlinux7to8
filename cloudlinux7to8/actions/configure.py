@@ -1,11 +1,15 @@
 # Copyright 2024. WebPros International GmbH. All rights reserved.
+
 import os
+import typing
 
 from pleskdistup.common import action, leapp_configs, files
 
 
 class PrepareLeappConfigurationBackup(action.ActiveAction):
-    def __init__(self):
+    leapp_configs: typing.List[str]
+
+    def __init__(self) -> None:
         self.name = "prepare leapp configuration backup"
         self.leapp_configs = ["/etc/leapp/files/leapp_upgrade_repositories.repo",
                               "/etc/leapp/files/repomap.csv",
@@ -35,7 +39,7 @@ class PrepareLeappConfigurationBackup(action.ActiveAction):
 
 class LeapReposConfiguration(action.ActiveAction):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "map plesk repositories for leapp"
 
     def _prepare_action(self) -> action.ActionResult:
@@ -56,8 +60,9 @@ class LeapReposConfiguration(action.ActiveAction):
 
 
 class LeapChoicesConfiguration(action.ActiveAction):
+    answer_file_path: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "configure leapp user choices"
         self.answer_file_path = "/var/log/leapp/answerfile.userchoices"
 
@@ -82,8 +87,9 @@ class LeapChoicesConfiguration(action.ActiveAction):
 
 
 class PatchLeappErrorOutput(action.ActiveAction):
+    path_to_str: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "patch leapp error log output"
         self.path_to_src = "/usr/share/leapp-repository/repositories/system_upgrade/common/libraries/dnfplugin.py"
 
@@ -100,8 +106,9 @@ class PatchLeappErrorOutput(action.ActiveAction):
 
 
 class PatchLeappDebugNonAsciiPackager(action.ActiveAction):
+    path_to_str: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "patch leapp to allow print debug message for non-ascii packager"
         self.path_to_src = "/usr/share/leapp-repository/repositories/system_upgrade/common/actors/redhatsignedrpmscanner/actor.py"
 
@@ -124,7 +131,7 @@ class PatchLeappDebugNonAsciiPackager(action.ActiveAction):
 class PatchLeappHandleDnfpluginErrorAscii(action.ActiveAction):
     path_to_src: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "patch leapp to handle dnf plugin error for ascii packager"
         self.path_to_src = "/usr/share/leapp-repository/repositories/system_upgrade/common/libraries/dnfplugin.py"
 
