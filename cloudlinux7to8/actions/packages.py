@@ -7,8 +7,9 @@ from pleskdistup.common import action, files, leapp_configs, log, motd, packages
 
 
 class RemovingPleskConflictPackages(action.ActiveAction):
+    conflict_pkgs: typing.List[str]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "remove plesk conflict packages"
         self.conflict_pkgs = [
             "openssl11-libs",
@@ -36,7 +37,7 @@ class RemovingPleskConflictPackages(action.ActiveAction):
 
 
 class ReinstallPleskComponents(action.ActiveAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "re-installing plesk components"
 
     def _prepare_action(self) -> action.ActionResult:
@@ -116,8 +117,8 @@ class ReinstallConflictPackages(action.ActiveAction):
             "libytnef": "ytnef",
         }
 
-    def _is_required(self):
-        return len(rpm.filter_installed_packages(self.conflict_pkgs_map.keys())) > 0
+    def _is_required(self) -> bool:
+        return len(rpm.filter_installed_packages(list(self.conflict_pkgs_map.keys()))) > 0
 
     def _prepare_action(self) -> action.ActionResult:
         packages_to_remove = rpm.filter_installed_packages(list(self.conflict_pkgs_map.keys()))
@@ -153,17 +154,17 @@ class ReinstallConflictPackages(action.ActiveAction):
         os.unlink(self.removed_packages_file)
         return action.ActionResult()
 
-    def estimate_prepare_time(self):
+    def estimate_prepare_time(self) -> int:
         return 10
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         pkgs_number = 0
         if os.path.exists(self.removed_packages_file):
             with open(self.removed_packages_file, "r") as f:
                 pkgs_number = len(f.read().splitlines())
         return 60 + 10 * pkgs_number
 
-    def estimate_revert_time(self):
+    def estimate_revert_time(self) -> int:
         pkgs_number = 0
         if os.path.exists(self.removed_packages_file):
             with open(self.removed_packages_file, "r") as f:
@@ -178,13 +179,13 @@ files with the .rpmsave extension. Below is a list of the changed files:
 
 
 class AdoptRepositories(action.ActiveAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "adopting repositories"
 
     def _prepare_action(self) -> action.ActionResult:
         return action.ActionResult()
 
-    def _use_rpmnew_repositories(self):
+    def _use_rpmnew_repositories(self) -> None:
         # The problem is about changed repofiles, that leapp tring to install form packages.
         # For example, when epel.repo file was changed, dnf will save the new one as epel.repo.rpmnew.
         # I beleive there could be other files with the same problem, so lets iterate every .rpmnew file in /etc/yum.repos.d
@@ -200,7 +201,7 @@ class AdoptRepositories(action.ActiveAction):
         if len(fixed_list) > 0:
             motd.add_finish_ssh_login_message(CHANGED_REPOS_MSG_FMT.format(changed_files="\n\t".join(fixed_list)))
 
-    def _adopt_plesk_repositories(self):
+    def _adopt_plesk_repositories(self) -> None:
         for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*.repo"]):
             rpm.remove_repositories(file, [
                 lambda id, _1, _2, _3, _4: id in ["PLESK_17_PHP52", "PLESK_17_PHP53",
@@ -218,7 +219,7 @@ class AdoptRepositories(action.ActiveAction):
     def _revert_action(self) -> action.ActionResult:
         return action.ActionResult()
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         return 2 * 60
 
 
@@ -244,7 +245,7 @@ class AssertPleskRepositoriesNotNoneLink(action.CheckAction):
 
 
 class RemoveOldMigratorThirdparty(action.ActiveAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "removing old migrator thirdparty packages"
 
     def _is_required(self) -> bool:
@@ -276,7 +277,7 @@ class RemoveOldMigratorThirdparty(action.ActiveAction):
 
 
 class RestoreMissingNginx(action.ActiveAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "restore nginx if it was removed during the conversion"
 
     def _is_required(self) -> bool:
@@ -295,14 +296,14 @@ class RestoreMissingNginx(action.ActiveAction):
     def _revert_action(self) -> action.ActionResult:
         return action.ActionResult()
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         return 3 * 60
 
 
 class CheckOutdatedLetsencryptExtensionRepository(action.CheckAction):
     OUTDATED_LETSENCRYPT_REPO_PATHS = ["/etc/yum.repos.d/plesk-letsencrypt.repo", "/etc/yum.repos.d/plesk-ext-letsencrypt.repo"]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "checking if outdated repository for letsencrypt extension is used"
         self.description = """There is outdated repository for letsencrypt extension used.
 \tTo resolve the problem perform following actions:
@@ -322,7 +323,7 @@ class CheckOutdatedLetsencryptExtensionRepository(action.CheckAction):
 class AdoptAtomicRepositories(action.ActiveAction):
     atomic_repository_path: str = "/etc/yum.repos.d/tortix-common.repo"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "adopting atomic repositories"
 
     def is_required(self) -> bool:
