@@ -87,7 +87,7 @@ class LeappChoicesConfiguration(action.ActiveAction):
 
 
 class PatchLeappErrorOutput(action.ActiveAction):
-    path_to_str: str
+    path_to_src: str
 
     def __init__(self) -> None:
         self.name = "patch leapp error log output"
@@ -106,7 +106,7 @@ class PatchLeappErrorOutput(action.ActiveAction):
 
 
 class PatchLeappDebugNonAsciiPackager(action.ActiveAction):
-    path_to_str: str
+    path_to_src: str
 
     def __init__(self) -> None:
         self.name = "patch leapp to allow print debug message for non-ascii packager"
