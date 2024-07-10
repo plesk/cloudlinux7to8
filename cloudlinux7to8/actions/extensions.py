@@ -1,4 +1,7 @@
 # Copyright 2024. WebPros International GmbH. All rights reserved.
+
+import typing
+
 from pleskdistup.common import action, util, leapp_configs, files
 
 
@@ -6,11 +9,14 @@ class FixupImunify(action.ActiveAction):
     def __init__(self):
         self.name = "fixing up imunify360"
 
+    def _find_imunify_repo_files(self) -> typing.List[str]:
+        return files.find_files_case_insensitive("/etc/yum.repos.d", ["imunify*.repo"])
+
     def _is_required(self) -> bool:
-        return len(files.find_files_case_insensitive("/etc/yum.repos.d", ["imunify*.repo"])) > 0
+        return len(self._find_imunify_repo_files()) > 0
 
     def _prepare_action(self) -> action.ActionResult:
-        repofiles = files.find_files_case_insensitive("/etc/yum.repos.d", ["imunify*.repo"])
+        repofiles = self._find_imunify_repo_files()
 
         leapp_configs.add_repositories_mapping(repofiles)
 
@@ -30,19 +36,27 @@ class AdoptKolabRepositories(action.ActiveAction):
     def __init__(self):
         self.name = "adopting kolab repositories"
 
+    def _find_kolab_repo_files(self) -> typing.List[str]:
+        return files.find_files_case_insensitive("/etc/yum.repos.d", ["kolab*.repo"])
+
     def _is_required(self) -> bool:
-        return len(files.find_files_case_insensitive("/etc/yum.repos.d", ["kolab*.repo"])) > 0
+        return len(self._find_kolab_repo_files()) > 0
 
     def _prepare_action(self) -> action.ActionResult:
-        repofiles = files.find_files_case_insensitive("/etc/yum.repos.d", ["kolab*.repo"])
+        repofiles = self._find_kolab_repo_files()
 
-        leapp_configs.add_repositories_mapping(repofiles, ignore=["kolab-16-source",
-                                                                  "kolab-16-testing-source",
-                                                                  "kolab-16-testing-candidate-source"])
+        leapp_configs.add_repositories_mapping(
+            repofiles,
+            ignore=[
+                "kolab-16-source",
+                "kolab-16-testing-source",
+                "kolab-16-testing-candidate-source",
+            ]
+        )
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
-        for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["kolab*.repo"]):
+        for file in self._find_kolab_repo_files():
             leapp_configs.adopt_repositories(file)
 
         util.logged_check_call(["/usr/bin/dnf", "-y", "update"])

@@ -1,5 +1,7 @@
 # Copyright 2024. WebPros International GmbH. All rights reserved.
+
 import subprocess
+import typing
 import os
 
 from pleskdistup.common import action, leapp_configs, files, log, mariadb, rpm, util
@@ -10,6 +12,10 @@ KNOWN_MARIADB_REPO_FILES = [
     "mariadb.repo",
     "mariadb10.repo",
 ]
+
+
+def _find_mariadb_repo_files() -> typing.List[str]:
+    return files.find_files_case_insensitive("/etc/yum.repos.d", KNOWN_MARIADB_REPO_FILES)
 
 
 class AssertMariadbRepoAvailable(action.CheckAction):
@@ -26,7 +32,7 @@ The MariaDB repository with id '{}' from the file '{}' is not accessible.
         if not mariadb.is_mariadb_installed() or not mariadb.get_installed_mariadb_version() > MARIADB_VERSION_ON_ALMA:
             return True
 
-        repofiles = files.find_files_case_insensitive("/etc/yum.repos.d", KNOWN_MARIADB_REPO_FILES)
+        repofiles = _find_mariadb_repo_files()
         if len(repofiles) == 0:
             return True
 
@@ -54,7 +60,7 @@ class UpdateModernMariadb(action.ActiveAction):
         return mariadb.is_mariadb_installed() and mariadb.get_installed_mariadb_version() > MARIADB_VERSION_ON_ALMA
 
     def _prepare_action(self) -> action.ActionResult:
-        repofiles = files.find_files_case_insensitive("/etc/yum.repos.d", KNOWN_MARIADB_REPO_FILES)
+        repofiles = _find_mariadb_repo_files()
         if len(repofiles) == 0:
             raise Exception("Mariadb installed from unknown repository. Please check the '{}' file is present".format("/etc/yum.repos.d/mariadb.repo"))
 
@@ -66,7 +72,7 @@ class UpdateModernMariadb(action.ActiveAction):
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
-        repofiles = files.find_files_case_insensitive("/etc/yum.repos.d", KNOWN_MARIADB_REPO_FILES)
+        repofiles = _find_mariadb_repo_files()
         if len(repofiles) == 0:
             return action.ActionResult()
 
@@ -116,7 +122,7 @@ class UpdateMariadbDatabase(action.ActiveAction):
         # Leapp is not remove non-standard MariaDB-client package. But since we have updated
         # mariadb to 10.3.35 old client is not relevant anymore. So we have to switch to new client.
         # On the other hand we want to be sure AlmaLinux mariadb-server installed as well
-        for repofile in files.find_files_case_insensitive("/etc/yum.repos.d", KNOWN_MARIADB_REPO_FILES):
+        for repofile in _find_mariadb_repo_files():
             files.backup_file(repofile)
             os.unlink(repofile)
 

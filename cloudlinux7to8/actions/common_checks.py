@@ -4,6 +4,7 @@ import collections
 import os
 import shutil
 import subprocess
+import typing
 
 from pleskdistup.common import action, dist, files, log, version
 
@@ -96,6 +97,10 @@ class AssertRedHatKernelInstalled(action.CheckAction):
         return len(redhat_kernel_packages) > 0
 
 
+def _find_repo_files() -> typing.List[str]:
+    return files.find_files_case_insensitive("/etc/yum.repos.d", "*.repo")
+
+
 class AssertLocalRepositoryNotPresent(action.CheckAction):
     def __init__(self):
         self.name = "checking if the local repository is present"
@@ -114,8 +119,10 @@ class AssertLocalRepositoryNotPresent(action.CheckAction):
     def _do_check(self) -> bool:
         # CentOS-Media.repo is a special file which is created by default on CentOS 7. It contains a local repository
         # but leapp allows it anyway. So we could skip it.
-        local_repositories_files = [file for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["*.repo"])
-                                    if os.path.basename(file) != "CentOS-Media.repo" and self._is_repo_contains_local_storage(file)]
+        local_repositories_files = [
+            file for file in _find_repo_files()
+            if os.path.basename(file) != "CentOS-Media.repo" and self._is_repo_contains_local_storage(file)
+        ]
 
         if len(local_repositories_files) == 0:
             return True
@@ -135,7 +142,7 @@ class AssertThereIsNoRepositoryDuplicates(action.CheckAction):
 
     def _do_check(self) -> bool:
         repositories = []
-        repofiles = files.find_files_case_insensitive("/etc/yum.repos.d", ["*.repo"])
+        repofiles = _find_repo_files()
         for repofile in repofiles:
             with open(repofile, "r") as f:
                 for line in f.readlines():
