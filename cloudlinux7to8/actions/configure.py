@@ -68,8 +68,8 @@ class LeappChoicesConfiguration(action.ActiveAction):
 
     def _prepare_action(self) -> action.ActionResult:
         try:
-            with open(self.answer_file_path, 'w') as usercoise:
-                usercoise.write("[remove_pam_pkcs11_module_check]\nconfirm = True\n")
+            with open(self.answer_file_path, 'w') as userchoice:
+                userchoice.write("[remove_pam_pkcs11_module_check]\nconfirm = True\n")
         except FileNotFoundError:
             raise RuntimeError("Unable to create the leapp user answer file '{}'. Likely the script does not have "
                                "sufficient permissions to write in this directory. Please run the script as root "
