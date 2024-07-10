@@ -46,24 +46,27 @@ class FixNamedConfig(action.ActiveAction):
 
 
 class DisableSuspiciousKernelModules(action.ActiveAction):
-    def __init__(self):
-        self.name = "rule suspicious kernel modules"
-        self.suspicious_modules = ["pata_acpi", "btrfs", "floppy"]
-        self.modules_konfig_path = "/etc/modprobe.d/pataacpibl.conf"
+    suspicious_modules: typing.Set[str]
+    modules_config_path: str
 
-    def _get_enabled_modules(self, lookup_modules: typing.List[str]) -> typing.List[str]:
-        modules = []
+    def __init__(self) -> None:
+        self.name = "disable suspicious kernel modules"
+        self.suspicious_modules = {"pata_acpi", "btrfs", "floppy"}
+        self.modules_config_path = "/etc/modprobe.d/pataacpibl.conf"
+
+    def _get_enabled_modules(self, lookup_modules: typing.Set[str]) -> typing.Set[str]:
+        modules = set()
         modules_list = subprocess.check_output(["/usr/sbin/lsmod"], universal_newlines=True).splitlines()
         for line in modules_list:
             module_name = line[:line.find(' ')]
             if module_name in lookup_modules:
-                modules.append(module_name)
+                modules.add(module_name)
         return modules
 
     def _prepare_action(self) -> action.ActionResult:
-        with open(self.modules_konfig_path, "a") as kern_mods_config:
+        with open(self.modules_config_path, "a") as kern_mods_config:
             for suspicious_module in self.suspicious_modules:
-                kern_mods_config.write("blacklist {module}\n".format(module=suspicious_module))
+                kern_mods_config.write(f"blacklist {suspicious_module}\n")
 
         for enabled_modules in self._get_enabled_modules(self.suspicious_modules):
             util.logged_check_call(["/usr/sbin/rmmod", enabled_modules])
@@ -72,16 +75,16 @@ class DisableSuspiciousKernelModules(action.ActiveAction):
 
     def _post_action(self) -> action.ActionResult:
         for module in self.suspicious_modules:
-            files.replace_string(self.modules_konfig_path, "blacklist " + module, "")
+            files.replace_string(self.modules_config_path, "blacklist " + module, "")
 
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
-        if not os.path.exists(self.modules_konfig_path):
+        if not os.path.exists(self.modules_config_path):
             return action.ActionResult()
 
         for module in self.suspicious_modules:
-            files.replace_string(self.modules_konfig_path, "blacklist " + module, "")
+            files.replace_string(self.modules_config_path, "blacklist " + module, "")
 
         return action.ActionResult()
 
