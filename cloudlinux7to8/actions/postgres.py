@@ -1,6 +1,8 @@
 # Copyright 2024. WebPros International GmbH. All rights reserved.
+
 import os
 import subprocess
+import typing
 
 from pleskdistup.common import action, files, leapp_configs, postgres, util
 
@@ -8,23 +10,22 @@ _ALMA8_POSTGRES_VERSION = 10
 
 
 class AssertOutdatedPostgresNotInstalled(action.CheckAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "checking postgres version 10 or later is installed"
         self.description = '''Postgres version less then 10. This means the database should be upgraded.
 \tIt might leads to data lose. Please make backup of your database and call the script with --upgrade-postgres.
 \tOr update postgres to version 10 and upgrade your databases.'''
 
-    def _do_check(self):
+    def _do_check(self) -> bool:
         return not postgres.is_postgres_installed() or not postgres.is_database_initialized() or not postgres.is_database_major_version_lower(_ALMA8_POSTGRES_VERSION)
 
 
 class PostgresDatabasesUpdate(action.ActiveAction):
-
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "updating postgres databases"
         self.service_name = 'postgresql'
 
-    def _is_required(self):
+    def _is_required(self) -> bool:
         return postgres.is_postgres_installed() and postgres.is_database_initialized() and postgres.is_database_major_version_lower(_ALMA8_POSTGRES_VERSION)
 
     def _prepare_action(self) -> action.ActionResult:
@@ -32,7 +33,7 @@ class PostgresDatabasesUpdate(action.ActiveAction):
         util.logged_check_call(['systemctl', 'disable', self.service_name])
         return action.ActionResult()
 
-    def _upgrade_database(self):
+    def _upgrade_database(self) -> None:
         util.logged_check_call(['dnf', 'install', '-y', 'postgresql-upgrade'])
 
         util.logged_check_call(['postgresql-setup', '--upgrade'])
@@ -48,7 +49,7 @@ class PostgresDatabasesUpdate(action.ActiveAction):
 
         util.logged_check_call(['dnf', 'remove', '-y', 'postgresql-upgrade'])
 
-    def _enable_postgresql(self):
+    def _enable_postgresql(self) -> None:
         util.logged_check_call(['systemctl', 'enable', self.service_name])
         util.logged_check_call(['systemctl', 'start', self.service_name])
 
@@ -61,7 +62,7 @@ class PostgresDatabasesUpdate(action.ActiveAction):
         self._enable_postgresql()
         return action.ActionResult()
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         return 3 * 60
 
 
@@ -69,16 +70,16 @@ class PostgresReinstallModernPackage(action.ActiveAction):
     # Leapp is going to remove postgresql package from the system during conversion process.
     # So during this action we shouldn't use any postgresql related commands. Luckily data will not be removed
     # and we can use them to recognize versions of postgresql we should install.
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "reinstall modern postgresql"
 
-    def _get_versions(self):
+    def _get_versions(self) -> typing.List[int]:
         return [int(dataset) for dataset in os.listdir(postgres.get_pgsql_root_path()) if dataset.isnumeric()]
 
-    def _is_required(self):
+    def _is_required(self) -> bool:
         return postgres.is_postgres_installed() and any([major_version >= _ALMA8_POSTGRES_VERSION for major_version in self._get_versions()])
 
-    def _is_service_active(self, service):
+    def _is_service_active(self, service: str) -> bool:
         res = subprocess.run(['/usr/bin/systemctl', 'is-active', service])
         return res.returncode == 0
 
@@ -124,5 +125,5 @@ class PostgresReinstallModernPackage(action.ActiveAction):
 
         return action.ActionResult()
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         return 3 * 60
