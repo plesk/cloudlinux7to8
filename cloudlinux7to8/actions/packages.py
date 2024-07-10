@@ -329,7 +329,7 @@ class AdoptAtomicRepositories(action.ActiveAction):
     def __init__(self) -> None:
         self.name = "adopting atomic repositories"
 
-    def is_required(self) -> bool:
+    def _is_required(self) -> bool:
         return os.path.exists(self.atomic_repository_path)
 
     def _prepare_action(self) -> action.ActionResult:
