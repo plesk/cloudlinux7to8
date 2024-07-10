@@ -83,13 +83,21 @@ class PostgresReinstallModernPackage(action.ActiveAction):
         res = subprocess.run(['/usr/bin/systemctl', 'is-active', service])
         return res.returncode == 0
 
+    @staticmethod
+    def _get_version_enabled_path(major_version: int) -> str:
+        return os.path.join(postgres.get_pgsql_root_path(), f'{major_version}.enabled')
+
+    @staticmethod
+    def _get_service_name(major_version: int) -> str:
+        return f'postgresql-{major_version}'
+
     def _prepare_action(self) -> action.ActionResult:
         leapp_configs.add_repositories_mapping(["/etc/yum.repos.d/pgdg-redhat-all.repo"])
 
         for major_version in self._get_versions():
-            service_name = 'postgresql-' + str(major_version)
+            service_name = self._get_service_name(major_version)
             if self._is_service_active(service_name):
-                with open(os.path.join(postgres.get_pgsql_root_path(), str(major_version)) + '.enabled', 'w'):
+                with open(self._get_version_enabled_path(major_version), 'w'):
                     pass
                 util.logged_check_call(['/usr/bin/systemctl', 'stop', service_name])
                 util.logged_check_call(['/usr/bin/systemctl', 'disable', service_name])
@@ -101,27 +109,27 @@ class PostgresReinstallModernPackage(action.ActiveAction):
             if major_version > _ALMA8_POSTGRES_VERSION:
                 util.logged_check_call(['/usr/bin/dnf', '-q', '-y', 'module', 'disable', 'postgresql'])
                 util.logged_check_call(['/usr/bin/dnf', 'update'])
-                util.logged_check_call(['/usr/bin/dnf', 'install', "-y", 'postgresql' + str(major_version), 'postgresql' + str(major_version) + '-server'])
+                util.logged_check_call(['/usr/bin/dnf', 'install', '-y', f'postgresql{major_version}', f'postgresql{major_version}-server'])
             else:
                 util.logged_check_call(['/usr/bin/dnf', '-q', '-y', 'module', 'enable', 'postgresql'])
                 util.logged_check_call(['/usr/bin/dnf', 'update'])
-                util.logged_check_call(['/usr/bin/dnf', 'install', "-y", 'postgresql', 'postgresql' + '-server'])
+                util.logged_check_call(['/usr/bin/dnf', 'install', '-y', 'postgresql', 'postgresql-server'])
 
-            if os.path.exists(os.path.join(postgres.get_pgsql_root_path(), str(major_version) + '.enabled')):
-                service_name = 'postgresql-' + str(major_version)
+            if os.path.exists(self._get_version_enabled_path(major_version)):
+                service_name = self._get_service_name(major_version)
                 util.logged_check_call(['/usr/bin/systemctl', 'enable', service_name])
                 util.logged_check_call(['/usr/bin/systemctl', 'start', service_name])
-                os.remove(os.path.join(postgres.get_pgsql_root_path(), str(major_version) + '.enabled'))
+                os.remove(self._get_version_enabled_path(major_version))
 
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
         for major_version in self._get_versions():
-            if os.path.exists(os.path.join(postgres.get_pgsql_root_path(), str(major_version) + '.enabled')):
-                service_name = 'postgresql-' + str(major_version)
+            if os.path.exists(self._get_version_enabled_path(major_version)):
+                service_name = self._get_service_name(major_version)
                 util.logged_check_call(['/usr/bin/systemctl', 'stop', service_name])
                 util.logged_check_call(['/usr/bin/systemctl', 'disable', service_name])
-                os.remove(os.path.join(postgres.get_pgsql_root_path(), str(major_version) + '.enabled'))
+                os.remove(self._get_version_enabled_path(major_version))
 
         return action.ActionResult()
 
