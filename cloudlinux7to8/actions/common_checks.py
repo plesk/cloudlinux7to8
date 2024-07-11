@@ -9,13 +9,13 @@ import typing
 from pleskdistup.common import action, dist, files, log, version
 
 
-class AssertDistroIsAlmalinux8(action.CheckAction):
-    def __init__(self):
-        self.name = "checking if distro is AlmaLinux8"
-        self.description = "You are running a distributive other than AlmaLinux 8. The finalization stage can only be started on AlmaLinux 8."
+class AssertDistroIsCloudLinux8(action.CheckAction):
+    def __init__(self) -> None:
+        self.name = "checking if distro is CloudLinux 8"
+        self.description = "You are running a distribution other than CloudLinux 8. The finalization stage can only be started on CloudLinux 8."
 
     def _do_check(self) -> bool:
-        return dist.get_distro() == dist.AlmaLinux("8")
+        return dist.get_distro() == dist.CloudLinux("8")
 
 
 class AssertNoMoreThenOneKernelNamedNIC(action.CheckAction):

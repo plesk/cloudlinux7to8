@@ -198,7 +198,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
         phase: Phase
     ) -> typing.List[action.CheckAction]:
         if phase is Phase.FINISH:
-            return [custom_actions.AssertDistroIsAlmalinux8()]
+            return [custom_actions.AssertDistroIsCloudLinux8()]
 
         FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION = "7.1"
         checks = [
