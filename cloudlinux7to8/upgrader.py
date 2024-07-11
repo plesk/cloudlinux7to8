@@ -160,7 +160,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             ],
             "Do convert": [
                 custom_actions.AdoptRepositories(),
-                custom_actions.DoCentos2AlmaConvert(),
+                custom_actions.DoCloudLinux7to8Convert(),
             ],
             "Pause before reboot": [
             ],
@@ -214,11 +214,11 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.AssertRedHatKernelInstalled(),
             custom_actions.AssertLastInstalledKernelInUse(),
             custom_actions.AssertLocalRepositoryNotPresent(),
-            custom_actions.AssertThereIsNoRepositoryDuplicates(),
+            custom_actions.AssertNoRepositoryDuplicates(),
             custom_actions.AssertMariadbRepoAvailable(),
             common_actions.AssertNotInContainer(),
             custom_actions.AssertPackagesUpToDate(),
-            custom_actions.CheckOutdatedLetsencryptExtensionRepository(),
+            custom_actions.AssertNoOutdatedLetsEncryptExtRepository(),
             custom_actions.AssertPleskRepositoriesNotNoneLink(),
         ]
 

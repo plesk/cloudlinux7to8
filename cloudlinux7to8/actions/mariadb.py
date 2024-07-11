@@ -12,6 +12,15 @@ KNOWN_MARIADB_REPO_FILES = [
     "mariadb.repo",
     "mariadb10.repo",
 ]
+MARIADB_PACKAGES = [
+    "MariaDB-client",
+    "MariaDB-client-compat",
+    "MariaDB-compat",
+    "MariaDB-common",
+    "MariaDB-server",
+    "MariaDB-server-compat",
+    "MariaDB-shared"
+]
 
 
 def _find_mariadb_repo_files() -> typing.List[str]:
@@ -19,7 +28,7 @@ def _find_mariadb_repo_files() -> typing.List[str]:
 
 
 class AssertMariadbRepoAvailable(action.CheckAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "check mariadb repo available"
         self.description = """
 The MariaDB repository with id '{}' from the file '{}' is not accessible.
@@ -52,8 +61,12 @@ The MariaDB repository with id '{}' from the file '{}' is not accessible.
         return True
 
 
+def _remove_mariadb_packages() -> None:
+    rpm.remove_packages(rpm.filter_installed_packages(MARIADB_PACKAGES))
+
+
 class UpdateModernMariadb(action.ActiveAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "update modern mariadb"
 
     def _is_required(self) -> bool:
@@ -81,13 +94,7 @@ class UpdateModernMariadb(action.ActiveAction):
 
         mariadb_repo_id, _1, _2, _3, _4, _5 = [repo for repo in rpm.extract_repodata(repofiles[0])][0]
 
-        rpm.remove_packages(rpm.filter_installed_packages(["MariaDB-client",
-                                                           "MariaDB-client-compat",
-                                                           "MariaDB-compat",
-                                                           "MariaDB-common",
-                                                           "MariaDB-server",
-                                                           "MariaDB-server-compat",
-                                                           "MariaDB-shared"]))
+        _remove_mariadb_packages()
         rpm.install_packages(["MariaDB-client", "MariaDB-server"], repository=mariadb_repo_id)
         return action.ActionResult()
 
@@ -102,40 +109,28 @@ class UpdateModernMariadb(action.ActiveAction):
 
 
 class UpdateMariadbDatabase(action.ActiveAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "updating mariadb databases"
 
     def _is_required(self) -> bool:
         return mariadb.is_mariadb_installed() and not mariadb.get_installed_mariadb_version() > MARIADB_VERSION_ON_ALMA
 
     def _prepare_action(self) -> action.ActionResult:
-        rpm.remove_packages(rpm.filter_installed_packages(["MariaDB-client",
-                                                           "MariaDB-client-compat",
-                                                           "MariaDB-compat",
-                                                           "MariaDB-common",
-                                                           "MariaDB-server",
-                                                           "MariaDB-server-compat",
-                                                           "MariaDB-shared"]))
+        _remove_mariadb_packages()
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
-        # Leapp is not remove non-standard MariaDB-client package. But since we have updated
+        # Leapp does not remove non-standard MariaDB-client package. But since we have updated
         # mariadb to 10.3.35 old client is not relevant anymore. So we have to switch to new client.
-        # On the other hand we want to be sure AlmaLinux mariadb-server installed as well
+        # On the other hand, we want to be sure AlmaLinux mariadb-server installed as well
         for repofile in _find_mariadb_repo_files():
             files.backup_file(repofile)
             os.unlink(repofile)
 
-        rpm.remove_packages(rpm.filter_installed_packages(["MariaDB-client",
-                                                           "MariaDB-client-compat",
-                                                           "MariaDB-compat",
-                                                           "MariaDB-common",
-                                                           "MariaDB-server",
-                                                           "MariaDB-server-compat",
-                                                           "MariaDB-shared"]))
+        _remove_mariadb_packages()
         rpm.install_packages(["mariadb", "mariadb-server"])
 
-        # We should be sure mariadb is started, otherwise restore woulden't work
+        # We should be sure mariadb is started, otherwise restore wouldn't work
         util.logged_check_call(["/usr/bin/systemctl", "start", "mariadb"])
 
         with open('/etc/psa/.psa.shadow', 'r') as shadowfile:
@@ -149,12 +144,12 @@ class UpdateMariadbDatabase(action.ActiveAction):
     def _revert_action(self) -> action.ActionResult:
         return action.ActionResult()
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         return 2 * 60
 
 
 class AddMysqlConnector(action.ActiveAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "install mysql connector"
 
     def _is_required(self) -> bool:

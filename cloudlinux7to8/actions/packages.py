@@ -157,19 +157,18 @@ class ReinstallConflictPackages(action.ActiveAction):
     def estimate_prepare_time(self) -> int:
         return 10
 
-    def estimate_post_time(self) -> int:
-        pkgs_number = 0
+    @property
+    def _removed_packages_num(self) -> int:
         if os.path.exists(self.removed_packages_file):
             with open(self.removed_packages_file, "r") as f:
-                pkgs_number = len(f.read().splitlines())
-        return 60 + 10 * pkgs_number
+                return len(f.read().splitlines())
+        return 0
+
+    def estimate_post_time(self) -> int:
+        return 60 + 10 * self._removed_packages_num
 
     def estimate_revert_time(self) -> int:
-        pkgs_number = 0
-        if os.path.exists(self.removed_packages_file):
-            with open(self.removed_packages_file, "r") as f:
-                pkgs_number = len(f.read().splitlines())
-        return 60 + 10 * pkgs_number
+        return 60 + 10 * self._removed_packages_num
 
 
 CHANGED_REPOS_MSG_FMT = """During the conversion, some of customized .repo files were updated. You can find the old
@@ -186,9 +185,9 @@ class AdoptRepositories(action.ActiveAction):
         return action.ActionResult()
 
     def _use_rpmnew_repositories(self) -> None:
-        # The problem is about changed repofiles, that leapp tring to install form packages.
+        # The problem is about changed repofiles, that leapp is trying to install from packages.
         # For example, when epel.repo file was changed, dnf will save the new one as epel.repo.rpmnew.
-        # I beleive there could be other files with the same problem, so lets iterate every .rpmnew file in /etc/yum.repos.d
+        # I beleive there could be other files with the same problem, so let's iterate every .rpmnew file in /etc/yum.repos.d
         fixed_list = []
         for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["*.rpmnew"]):
             original_file = file[:-len(".rpmnew")]
@@ -225,8 +224,8 @@ class AdoptRepositories(action.ActiveAction):
 
 class AssertPleskRepositoriesNotNoneLink(action.CheckAction):
     def __init__(self):
-        self.name = "checking if plesk repositories are adoptable"
-        self.description = """There are plesk repositories has none link. To proceed the conversion, remove following repositories:
+        self.name = "checking if plesk repositories does not have a 'none' link"
+        self.description = """There are plesk repositories with link set to 'none'. To proceed with the conversion, remove following repositories:
 \t- {}
 """
 
@@ -303,7 +302,7 @@ class RestoreMissingNginx(action.ActiveAction):
         return 3 * 60
 
 
-class CheckOutdatedLetsencryptExtensionRepository(action.CheckAction):
+class AssertNoOutdatedLetsEncryptExtRepository(action.CheckAction):
     OUTDATED_LETSENCRYPT_REPO_PATHS = ["/etc/yum.repos.d/plesk-letsencrypt.repo", "/etc/yum.repos.d/plesk-ext-letsencrypt.repo"]
 
     def __init__(self) -> None:

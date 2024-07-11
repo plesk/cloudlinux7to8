@@ -13,9 +13,7 @@ class FixOsVendorPhpFpmConfiguration(action.ActiveAction):
         self.name = "fix OS vendor PHP configuration"
 
     def is_required(self) -> bool:
-        if os.path.exists(OS_VENDOR_PHP_FPM_CONFIG):
-            return True
-        return False
+        return os.path.exists(OS_VENDOR_PHP_FPM_CONFIG)
 
     def _prepare_action(self) -> action.ActionResult:
         return action.ActionResult()

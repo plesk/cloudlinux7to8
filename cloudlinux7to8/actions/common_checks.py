@@ -19,7 +19,7 @@ class AssertDistroIsCloudLinux8(action.CheckAction):
 
 
 class AssertNoMoreThenOneKernelNamedNIC(action.CheckAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "checking if there is more than one NIC interface using ketnel-name"
         self.description = """The system has one or more network interface cards (NICs) using kernel-names (ethX).
 \tLeapp cannot guarantee the interface names' stability during the conversion.
@@ -28,7 +28,7 @@ class AssertNoMoreThenOneKernelNamedNIC(action.CheckAction):
 """
 
     def _do_check(self) -> bool:
-        # We can't use this method th get interfaces names, so just skip the check
+        # We can't use this method to get interfaces names, so just skip the check
         if not os.path.exists("/sys/class/net"):
             return True
 
@@ -43,7 +43,7 @@ class AssertNoMoreThenOneKernelNamedNIC(action.CheckAction):
 
 # ToDo. Implement for deb-based and move to common part. Might be useful for distupgrade/other converters
 class AssertLastInstalledKernelInUse(action.CheckAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "checking if the last installed kernel is in use"
         self.description = """The last installed kernel is not in use.
 \tThe kernel version in use is '{}'. The last installed kernel version is '{}'.
@@ -77,7 +77,7 @@ class AssertLastInstalledKernelInUse(action.CheckAction):
 
 
 class AssertRedHatKernelInstalled(action.CheckAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "checking if the Red Hat kernel is installed"
         self.description = """No Red Hat signed kernel is installed.
 \tTo proceed with the conversion, install a kernel by running:
@@ -104,12 +104,12 @@ def _find_repo_files() -> typing.List[str]:
 class AssertLocalRepositoryNotPresent(action.CheckAction):
     def __init__(self):
         self.name = "checking if the local repository is present"
-        self.description = """There are rpm repository with local storage present. Leapp is not support such kind of repositories.
+        self.description = """There are rpm repositories with local storage present. Leapp is not support such kind of repositories.
 \tPlease remove the local repositories to proceed the conversion. Files where locally stored repositories are defined:
 \t- {}
 """
 
-    def _is_repo_contains_local_storage(self, repo_file) -> bool:
+    def _is_repo_with_local_storage(self, repo_file) -> bool:
         with open(repo_file) as f:
             repository_content = f.read()
             return ("baseurl=file:" in repository_content or "baseurl = file:" in repository_content or
@@ -121,7 +121,7 @@ class AssertLocalRepositoryNotPresent(action.CheckAction):
         # but leapp allows it anyway. So we could skip it.
         local_repositories_files = [
             file for file in _find_repo_files()
-            if os.path.basename(file) != "CentOS-Media.repo" and self._is_repo_contains_local_storage(file)
+            if os.path.basename(file) != "CentOS-Media.repo" and self._is_repo_with_local_storage(file)
         ]
 
         if len(local_repositories_files) == 0:
@@ -131,13 +131,13 @@ class AssertLocalRepositoryNotPresent(action.CheckAction):
         return False
 
 
-class AssertThereIsNoRepositoryDuplicates(action.CheckAction):
-    def __init__(self):
+class AssertNoRepositoryDuplicates(action.CheckAction):
+    def __init__(self) -> None:
         self.name = "checking if there are duplicate repositories"
         self.description = """There are duplicate repositories present:
 \t- {}
 
-\tPlease remove the duplicate to proceed the conversion.
+\tPlease remove duplicates to proceed the conversion.
 """
 
     def _do_check(self) -> bool:
@@ -170,7 +170,7 @@ class AssertPackagesUpToDate(action.CheckAction):
 
 
 class AssertAvailableSpace(action.CheckAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "checking available space"
         self.required_space = 5 * 1024 * 1024 * 1024  # 5GB
         self.description = """There is insufficient disk space available. Leapp requires a minimum of {} of free space
@@ -178,7 +178,7 @@ class AssertAvailableSpace(action.CheckAction):
 \tFree up enough disk space and try again.
 """
 
-    def _huminize_size(self, size) -> str:
+    def _get_human_readable_size(self, size) -> str:
         original = size
         for unit in ("B", "KB", "MB", "GB", "TB"):
             if size < 1024:
@@ -193,5 +193,5 @@ class AssertAvailableSpace(action.CheckAction):
         if available_space >= self.required_space:
             return True
 
-        self.description = self.description.format(self._huminize_size(self.required_space), self._huminize_size(available_space))
+        self.description = self.description.format(self._get_human_readable_size(self.required_space), self._get_human_readable_size(available_space))
         return False

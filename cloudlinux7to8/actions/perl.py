@@ -66,12 +66,18 @@ class AssertThereIsNoUnknownPerlCpanModules(action.CheckAction):
 
 
 class ReinstallPerlCpanModules(action.ActiveAction):
-    def __init__(self, store_dir: str):
+    removed_modules_file: str
+
+    def __init__(self, store_dir: str) -> None:
         self.name = "reinstalling perl cpan modules"
         self.removed_modules_file = os.path.join(store_dir, "cloudlinux7to8_removed_perl_modules.txt")
 
-    def _is_required(self):
+    def _is_required(self) -> bool:
         return not files.is_directory_empty(CPAN_MODULES_DIRECTORY)
+
+    @property
+    def cpan_modules_directory_backup(self) -> str:
+        return CPAN_MODULES_DIRECTORY + ".backup"
 
     def _prepare_action(self) -> action.ActionResult:
         with open(self.removed_modules_file, "w") as f:
@@ -83,12 +89,12 @@ class ReinstallPerlCpanModules(action.ActiveAction):
         # but cpan don't have an option to remove one module for some reason.
         # Since we can't be sure cpan-minimal is installed, we have to
         # remove all in barbaric way.
-        shutil.move(CPAN_MODULES_DIRECTORY, CPAN_MODULES_DIRECTORY + ".backup")
+        shutil.move(CPAN_MODULES_DIRECTORY, self.cpan_modules_directory_backup)
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
         if not os.path.exists(self.removed_modules_file):
-            no_file_warning = "The file containing the list of removed Perl modules does not exist. However, the action itself was not skipped. You can find the previously installed modules at the following path: {}.\n".format(CPAN_MODULES_DIRECTORY + ".backup")
+            no_file_warning = f"The file containing the list of removed Perl modules does not exist. However, the action itself was not skipped. You can find the previously installed modules at the following path: {CPAN_MODULES_DIRECTORY}.backup.\n"
             log.warn(no_file_warning)
             motd.add_finish_ssh_login_message(no_file_warning)
             return action.ActionResult()
@@ -98,17 +104,17 @@ class ReinstallPerlCpanModules(action.ActiveAction):
             rpm.install_packages(packages_to_install)
 
         os.unlink(self.removed_modules_file)
-        shutil.rmtree(CPAN_MODULES_DIRECTORY + ".backup")
+        shutil.rmtree(self.cpan_modules_directory_backup)
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
-        if os.path.exists(CPAN_MODULES_DIRECTORY + ".backup"):
-            shutil.move(CPAN_MODULES_DIRECTORY + ".backup", CPAN_MODULES_DIRECTORY)
+        if os.path.exists(self.cpan_modules_directory_backup):
+            shutil.move(self.cpan_modules_directory_backup, CPAN_MODULES_DIRECTORY)
 
         if os.path.exists(self.removed_modules_file):
             os.unlink(self.removed_modules_file)
 
         return action.ActionResult()
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         return 60

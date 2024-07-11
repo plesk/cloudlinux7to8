@@ -2,7 +2,7 @@
 from pleskdistup.common import action, util
 
 
-class DoCentos2AlmaConvert(action.ActiveAction):
+class DoCloudLinux7to8Convert(action.ActiveAction):
     def __init__(self):
         self.name = "doing the conversion"
 

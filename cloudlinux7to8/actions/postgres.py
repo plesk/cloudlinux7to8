@@ -21,6 +21,8 @@ class AssertOutdatedPostgresNotInstalled(action.CheckAction):
 
 
 class PostgresDatabasesUpdate(action.ActiveAction):
+    service_name: str
+
     def __init__(self) -> None:
         self.name = "updating PostgreSQL databases"
         self.service_name = 'postgresql'
