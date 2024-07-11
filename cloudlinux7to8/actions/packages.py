@@ -132,7 +132,7 @@ class ReinstallConflictPackages(action.ActiveAction):
 
     def _post_action(self) -> action.ActionResult:
         if not os.path.exists(self.removed_packages_file):
-            log.warn("File with removed packages list is not exists. While the action itself was not skipped. Skip reinstalling packages.")
+            log.warn("File with removed packages list does not exist. While the action itself was not skipped. Skip reinstalling packages.")
             return action.ActionResult()
 
         with open(self.removed_packages_file, "r") as f:
@@ -144,7 +144,7 @@ class ReinstallConflictPackages(action.ActiveAction):
 
     def _revert_action(self) -> action.ActionResult:
         if not os.path.exists(self.removed_packages_file):
-            log.warn("File with removed packages list is not exists. While the action itself was not skipped. Skip reinstalling packages.")
+            log.warn("File with removed packages list does not exist. While the action itself was not skipped. Skip reinstalling packages.")
             return action.ActionResult()
 
         with open(self.removed_packages_file, "r") as f:
