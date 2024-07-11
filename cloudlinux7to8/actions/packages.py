@@ -29,10 +29,10 @@ class RemovingPleskConflictPackages(action.ActiveAction):
         packages.install_packages(self.conflict_pkgs)
         return action.ActionResult()
 
-    def estimate_prepare_time(self):
+    def estimate_prepare_time(self) -> int:
         return 2
 
-    def estimate_revert_time(self):
+    def estimate_revert_time(self) -> int:
         return 10
 
 
@@ -66,13 +66,13 @@ class ReinstallPleskComponents(action.ActiveAction):
         systemd.restart_services(["sw-cp-server"])
         return action.ActionResult()
 
-    def estimate_prepare_time(self):
+    def estimate_prepare_time(self) -> int:
         return 10
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         return 2 * 60
 
-    def estimate_revert_time(self):
+    def estimate_revert_time(self) -> int:
         return 6 * 60
 
 

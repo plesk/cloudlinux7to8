@@ -9,7 +9,7 @@ OS_VENDOR_PHP_FPM_CONFIG = "/etc/php-fpm.d/www.conf"
 
 
 class FixOsVendorPhpFpmConfiguration(action.ActiveAction):
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = "fix OS vendor PHP configuration"
 
     def is_required(self) -> bool:
@@ -38,5 +38,5 @@ class FixOsVendorPhpFpmConfiguration(action.ActiveAction):
     def _revert_action(self) -> action.ActionResult:
         return action.ActionResult()
 
-    def estimate_post_time(self):
+    def estimate_post_time(self) -> int:
         return 1
