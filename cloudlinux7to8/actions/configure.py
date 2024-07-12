@@ -86,16 +86,18 @@ class LeappChoicesConfiguration(action.ActiveAction):
         return action.ActionResult()
 
 
-class PatchLeappErrorOutput(action.ActiveAction):
+# Merge of former actions PatchLeappErrorOutput,
+# PatchLeappHandleDnfpluginErrorAscii from centos2alma
+class PatchDnfpluginErrorOutput(action.ActiveAction):
     path_to_src: str
 
     def __init__(self) -> None:
-        self.name = "patch leapp error log output"
+        self.name = "patch leapp dnf plugin error log output"
         self.path_to_src = "/usr/share/leapp-repository/repositories/system_upgrade/common/libraries/dnfplugin.py"
 
     def _prepare_action(self) -> action.ActionResult:
         # Looks like there is no setter for stdout/stderr in the python for leapp
-        files.replace_string(self.path_to_src, "if six.PY2:", "if False:")
+        files.replace_string(self.path_to_src, "if six.PY2:", "if True:")
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
@@ -119,27 +121,6 @@ class PatchLeappDebugNonAsciiPackager(action.ActiveAction):
         # so sometimes we could have non-ascii packager name, in this case leapp will fail
         # on printing debug message. So we need to encode it to utf-8 before print (and only before print I think)
         files.replace_string(self.path_to_src, ", pkg.packager", ", pkg.packager.encode('utf-8')")
-        return action.ActionResult()
-
-    def _post_action(self) -> action.ActionResult:
-        return action.ActionResult()
-
-    def _revert_action(self) -> action.ActionResult:
-        return action.ActionResult()
-
-
-class PatchLeappHandleDnfpluginErrorAscii(action.ActiveAction):
-    path_to_src: str
-
-    def __init__(self) -> None:
-        self.name = "patch leapp to handle dnf plugin error for ascii packager"
-        self.path_to_src = "/usr/share/leapp-repository/repositories/system_upgrade/common/libraries/dnfplugin.py"
-
-    def is_required(self) -> bool:
-        return os.path.exists(self.path_to_src)
-
-    def _prepare_action(self) -> action.ActionResult:
-        files.replace_string(self.path_to_src, "if False", "if True")
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:

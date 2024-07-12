@@ -120,7 +120,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.AdoptKolabRepositories(),
                 custom_actions.AdoptAtomicRepositories(),
                 custom_actions.FixupImunify(),
-                custom_actions.PatchLeappErrorOutput(),
+                custom_actions.PatchDnfpluginErrorOutput(),
                 custom_actions.PatchLeappDebugNonAsciiPackager(),
                 common_actions.AddUpgradeSystemdService(
                     os.path.abspath(upgrader_bin_path),
