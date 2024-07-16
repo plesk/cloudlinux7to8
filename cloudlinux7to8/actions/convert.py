@@ -18,4 +18,4 @@ class DoCloudLinux7to8Convert(action.ActiveAction):
         return action.ActionResult()
 
     def estimate_prepare_time(self) -> int:
-        return 17 * 60
+        return 40 * 60
