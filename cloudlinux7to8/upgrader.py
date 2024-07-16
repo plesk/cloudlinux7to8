@@ -159,8 +159,11 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.UpdateModernMariadb(),
                 custom_actions.AddMysqlConnector(),
             ],
-            "Do convert": [
+            "Repositories handling": [
                 custom_actions.AdoptRepositories(),
+            ],
+            "Do convert": [
+                custom_actions.RemovePleskBaseRepository(),
                 custom_actions.DoCloudLinux7to8Convert(),
             ],
             "Pause before reboot": [

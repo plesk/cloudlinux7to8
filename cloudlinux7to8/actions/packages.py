@@ -222,6 +222,40 @@ class AdoptRepositories(action.ActiveAction):
         return 2 * 60
 
 
+class RemovePleskBaseRepository(action.ActiveAction):
+    # In some cases we have plesk specific base repository, which will not be
+    # fixed by the leapp converter. So we have to remove it manually.
+    base_repo_path: str = "/etc/yum.repos.d/base.repo"
+
+    def __init__(self) -> None:
+        self.name = "removing base repository"
+
+    def _is_required(self) -> bool:
+        return os.path.exists(self.base_repo_path)
+
+    def _prepare_action(self) -> action.ActionResult:
+        return action.ActionResult()
+
+    def _is_plesk_base(self, repo_file: str) -> bool:
+        for id, _2, baseurl, _3, _4, _5 in rpm.extract_repodata(repo_file):
+            if baseurl and "psabr.aws.plesk.tech/share/mirror/cloudlinux/7" in baseurl:
+                log.info(f"Plesk base repo found in {repo_file!r} by repository {id!r}")
+                return True
+        return False
+
+    def _post_action(self) -> action.ActionResult:
+        if os.path.exists(self.base_repo_path):
+            if self._is_plesk_base(self.base_repo_path):
+                files.backup_file(self.base_repo_path)
+                os.unlink(self.base_repo_path)
+                return action.ActionResult()
+
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        return action.ActionResult()
+
+
 class AssertPleskRepositoriesNotNoneLink(action.CheckAction):
     def __init__(self):
         self.name = "checking if plesk repositories does not have a 'none' link"
