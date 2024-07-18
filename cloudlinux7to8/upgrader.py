@@ -204,7 +204,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
         if phase is Phase.FINISH:
             return [custom_actions.AssertDistroIsCloudLinux8()]
 
-        FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION = "7.1"
+        FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION = "5.6"
         checks = [
             common_actions.AssertPleskVersionIsAvailable(),
             common_actions.AssertPleskInstallerNotInProgress(),
