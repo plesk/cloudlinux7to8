@@ -3,7 +3,7 @@
 CloudLinux 7 to 8 conversion tool
 
 ## Introduction
-This script is the official tool for converting a CloudLinux 7 server with Plesk to CloudLinux 8. It uses the [AlmaLinux ELevate tool](https://wiki.almalinux.org/elevate/ELevate-quickstart-guide.html), which is based on the [leapp modernization framework](https://leapp.readthedocs.io/en/latest/). The script includes additional repository and configuration support provided by Plesk.
+This script is the official tool for converting a CloudLinux 7 server with Plesk to CloudLinux 8. It uses the [CloudLinux Elevate tool](https://cloudlinux.com/elevate/), which is based on the [leapp modernization framework](https://leapp.readthedocs.io/en/latest/). The script includes additional repository and configuration support provided by Plesk.
 
 ## Preparation
 To avoid downtime and data loss, make sure you have read and understood the following information before using the script:
@@ -13,8 +13,8 @@ To avoid downtime and data loss, make sure you have read and understood the foll
 4. Read the [Known issues](#known-issues) section below for the list of known issues.
 
 ## Timing
-The conversion process should run between 30 and 60 minutes. **Plesk services, hosted websites, and emails will be unavailable during the entirety of the conversion process**. The conversion process itself consists of three stages:
-- Preparation, which takes between 15 and 25 minutes.
+The conversion process should run between 50 and 80 minutes. **Plesk services, hosted websites, and emails will be unavailable during the entirety of the conversion process**. The conversion process itself consists of three stages:
+- Preparation, which takes between 30 and 40 minutes.
 - Conversion, which takes between 15 and 30 minutes. During this stage, the server will not be available remotely. You can monitor the progress via a serial port console.
 - Finalization, which takes between 5 and 10 minutes.
 
@@ -30,7 +30,7 @@ Do not use the script if any of the following is true:
 ## Requirements
 - Plesk version is more than five releases behind the latest version.
 - CloudLinux 7.9 or later.
-- grub is installed
+- grub2 is installed
 - At least 5 GB of free disk space.
 - At least 1 GB of RAM.
 
@@ -80,9 +80,11 @@ You can remove this message from the /etc/motd file.
 ```
 
 ### Conversion stage options
-The conversion process consists of three stage options: "start", and "finish". To run stages individually, use the "--start", and "--finish" flags, or the "-s" flag with name of the stage you want to run.
+The conversion process consists of two stage options: "start", and "finish". To run stages individually, use the "--start", and "--finish" flags, or the "-s" flag with name of the stage you want to run.
 1. The "start" stage installs and configures ELevate, disables Plesk services and runs ELevate. It then stops Plesk services and reboots the server.
-2. The "finish" stage must be called on the first boot of CloudLinux 8. You can rerun this stage if something goes wrong during the first boot to ensure that the problem is fixed and Plesk is ready to use.
+2. The "finish" stage must be called automatically on the first boot of CloudLinux 8. You can rerun this stage if something goes wrong during the first boot to ensure that the problem is fixed and Plesk is ready to use.
+
+During each phase a conversion plan consisting of stages, which in turn consist of actions, is executed. You can see the general stages in the `--help` output and the detailed plan in the `--show-plan` output.
 
 ### Other arguments
 
@@ -132,8 +134,11 @@ If you are confident that you no longer require the modules installed via CPAN, 
 ### Leapp unable to handle packages
 Leapp may not be able to handle certain installed packages, especially those installed from custom repositories. In this case, the cloudlinux7to8 will fail while running leapp preupgrade or leapp upgrade. The easiest way to fix this issue is to remove the package(s), and then reinstall them once the conversion is complete.
 
+### Leapp cannot choose which package to install
+This issue may occur if unsupported repositories are used. For instance, if an unexpected EPEL repository is enabled on the server, the cloudlinux7to8 process will fail when running `leapp preupgrade` or `leapp upgrade`. This is due to conflicting packages between the el8 and el7 repositories. The simplest way to resolve this issue is to switch to the standard repositories.
+
 ### Temporary OS distribution hangs
-This issue may occur, for example, if there is a custom python installation on the server. The conversion process will fail while upgrading the temporary OS distribution, and the temporary OS will hang with no notification. To identify the issue, connect to the server using a serial port console and check the status of the conversion process. To fix the issue, reboot the server. Note that an unfinished installation process may result in missing packages and other issues.
+This issue may occur, for example, if there is a custom python installation on the server or because of encoding inconsistency. The conversion process will fail while upgrading the temporary OS distribution, and the temporary OS will hang with no notification. To identify the issue, connect to the server using a serial port console and check the status of the conversion process. To fix the issue, reboot the server. Note that an unfinished installation process may result in missing packages and other issues.
 
 ### cloudlinux7to8 finish fails on the first boot
 If something goes wrong during the finish stage, you will be informed on the next SSH login with this message:
