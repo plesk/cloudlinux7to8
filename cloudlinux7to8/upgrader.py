@@ -157,6 +157,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             "Update databases": [
                 custom_actions.UpdateMariadbDatabase(),
                 custom_actions.UpdateModernMariadb(),
+                custom_actions.UpdateGuvernorMariadb(),
                 custom_actions.AddMysqlConnector(),
             ],
             "Repositories handling": [
@@ -224,6 +225,8 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.AssertPackagesUpToDate(),
             custom_actions.AssertNoOutdatedLetsEncryptExtRepository(),
             custom_actions.AssertPleskRepositoriesNotNoneLink(),
+            custom_actions.AssertMinGovernorMariadbVersion(custom_actions.FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION),
+            custom_actions.AssertGovernorMysqlNotInstalled(custom_actions.FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION),
         ]
 
         if not self.upgrade_postgres_allowed:
