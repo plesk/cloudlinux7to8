@@ -11,6 +11,7 @@ MARIADB_VERSION_ON_ALMA = mariadb.MariaDBVersion("10.3.39")
 KNOWN_MARIADB_REPO_FILES = [
     "mariadb.repo",
     "mariadb10.repo",
+    "cl-mysql.repo"
 ]
 MARIADB_PACKAGES = [
     "MariaDB-client",
@@ -25,6 +26,20 @@ MARIADB_PACKAGES = [
 
 def _find_mariadb_repo_files() -> typing.List[str]:
     return files.find_files_case_insensitive("/etc/yum.repos.d", KNOWN_MARIADB_REPO_FILES)
+
+
+def _is_governor_mariadb_installed() -> bool:
+    if not mariadb.is_mariadb_installed() and not mariadb.is_mysql_installed():
+        return False
+
+    repofiles = _find_mariadb_repo_files()
+    for repofile in repofiles:
+        for repo in rpm.extract_repodata(repofile):
+            _, _, repo_baseurl, _, _, _ = repo
+            if repo_baseurl and "repo.cloudlinux.com" in repo_baseurl and ("cl-mariadb" in repo_baseurl or "cl-mysql" in repo_baseurl):
+                return True
+
+    return False
 
 
 class AssertMariadbRepoAvailable(action.CheckAction):
@@ -70,7 +85,7 @@ class UpdateModernMariadb(action.ActiveAction):
         self.name = "update modern mariadb"
 
     def _is_required(self) -> bool:
-        return mariadb.is_mariadb_installed() and mariadb.get_installed_mariadb_version() > MARIADB_VERSION_ON_ALMA
+        return mariadb.is_mariadb_installed() and mariadb.get_installed_mariadb_version() > MARIADB_VERSION_ON_ALMA and not _is_governor_mariadb_installed()
 
     def _prepare_action(self) -> action.ActionResult:
         repofiles = _find_mariadb_repo_files()
@@ -113,7 +128,7 @@ class UpdateMariadbDatabase(action.ActiveAction):
         self.name = "updating mariadb databases"
 
     def _is_required(self) -> bool:
-        return mariadb.is_mariadb_installed() and not mariadb.get_installed_mariadb_version() > MARIADB_VERSION_ON_ALMA
+        return mariadb.is_mariadb_installed() and not mariadb.get_installed_mariadb_version() > MARIADB_VERSION_ON_ALMA and not _is_governor_mariadb_installed()
 
     def _prepare_action(self) -> action.ActionResult:
         _remove_mariadb_packages()
@@ -146,6 +161,96 @@ class UpdateMariadbDatabase(action.ActiveAction):
 
     def estimate_post_time(self) -> int:
         return 2 * 60
+
+
+FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION = mariadb.MariaDBVersion("10.2.44")
+
+
+class AssertMinGovernorMariadbVersion(action.CheckAction):
+    minimal_version: mariadb.MariaDBVersion
+
+    def __init__(self, version: mariadb.MariaDBVersion) -> None:
+        self.name = "check minimum guvernor mariadb version"
+        self.minimal_version = version
+        self.description = f"""
+The installed version of MariaDB is incompatible with the conversion process. To proceed, update MariaDB using Governor to version {str(self.minimal_version)!r} or later.
+"""
+
+    def _do_check(self) -> bool:
+        if not mariadb.is_mariadb_installed() or not _is_governor_mariadb_installed():
+            return True
+
+        return mariadb.get_installed_mariadb_version() >= self.minimal_version
+
+
+class AssertGovernorMysqlNotInstalled(action.CheckAction):
+    minimal_version: mariadb.MariaDBVersion
+
+    def __init__(self, version: mariadb.MariaDBVersion) -> None:
+        self.name = "check minimum governor mariadb version"
+        self.minimal_version = version
+        self.description = f"""
+MySQL installed by Governor is not compatible with the conversion process. To continue, use Governor to update MariaDB to at least version {str(self.minimal_version)!r}.
+"""
+
+    def _do_check(self) -> bool:
+        return not mariadb.is_mysql_installed() or not _is_governor_mariadb_installed()
+
+
+class UpdateGuvernorMariadb(action.ActiveAction):
+    def __init__(self) -> None:
+        self.name = "update modern mariadb installed from governor"
+
+    def _is_required(self) -> bool:
+        if not mariadb.is_mariadb_installed() or not _is_governor_mariadb_installed():
+            return False
+        # Actually the version should be checked by the AssertMinGovernorMariadbVersion pre-checker
+        # Therefore, if this execution occurs, we have likely forgotten to include the pre-checker in the process.
+        if mariadb.get_installed_mariadb_version() < FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION:
+            raise Exception(f"The installed version of MariaDB is not compatible with the conversion process. Please use Governor to update MariaDB to version {str(FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION)!r} or later.")
+
+        return True
+
+    def _prepare_action(self) -> action.ActionResult:
+        repofiles = _find_mariadb_repo_files()
+        if len(repofiles) == 0:
+            raise Exception("Mariadb installed from unknown repository. Please check the '{}' file is present".format("/etc/yum.repos.d/mariadb.repo"))
+
+        log.debug("Add MariaDB repository files '{}' mapping".format(repofiles[0]))
+        leapp_configs.add_repositories_mapping(repofiles)
+
+        # Unfortunately we can't rule source repositories for cl-MariaDB* packages at this point
+        # because they based on dnf modules, which will not be available in scope of leapp script.
+        # So we will have to reinstall packages after conversion process on CloudLinux 8 side.
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        repofiles = _find_mariadb_repo_files()
+        if len(repofiles) == 0:
+            return action.ActionResult()
+
+        for repofile in repofiles:
+            leapp_configs.adopt_repositories(repofile)
+
+        mariadb_packages = rpm.get_installed_packages_list("cl-MariaDB*")
+        mariadb_version = mariadb.get_installed_mariadb_version()
+        mariadb_module = f"mariadb:cl-MariaDB{mariadb_version.major}{mariadb_version.minor}"
+        log.debug(f"Going to reinstall following packages with enabled dnf module {mariadb_module!r}: {mariadb_packages}")
+
+        rpm.remove_packages(rpm.filter_installed_packages(mariadb_packages))
+        util.logged_check_call(["dnf", "module", "enable", mariadb_module])
+        rpm.install_packages(mariadb_packages)
+
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        return action.ActionResult()
+
+    def estimate_prepare_time(self) -> int:
+        return 30
+
+    def estimate_post_time(self) -> int:
+        return 60
 
 
 class AddMysqlConnector(action.ActiveAction):
