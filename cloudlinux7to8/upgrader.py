@@ -227,6 +227,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.AssertPleskRepositoriesNotNoneLink(),
             custom_actions.AssertMinGovernorMariadbVersion(custom_actions.FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION),
             custom_actions.AssertGovernorMysqlNotInstalled(custom_actions.FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION),
+            common_actions.AssertNoMoreThenOneKernelDevelInstalled(),
         ]
 
         if not self.upgrade_postgres_allowed:
