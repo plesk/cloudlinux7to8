@@ -198,8 +198,11 @@ MySQL installed by Governor is not compatible with the conversion process. To co
 
 
 class UpdateGuvernorMariadb(action.ActiveAction):
-    def __init__(self) -> None:
+    mariadb_version_file: str
+
+    def __init__(self, temp_directory: str) -> None:
         self.name = "update modern mariadb installed from governor"
+        self.mariadb_version_file = temp_directory + "/mariadb_version.txt"
 
     def _is_required(self) -> bool:
         if not mariadb.is_mariadb_installed() or not _is_governor_mariadb_installed():
@@ -222,6 +225,14 @@ class UpdateGuvernorMariadb(action.ActiveAction):
         # Unfortunately we can't rule source repositories for cl-MariaDB* packages at this point
         # because they based on dnf modules, which will not be available in scope of leapp script.
         # So we will have to reinstall packages after conversion process on CloudLinux 8 side.
+
+        # To select the correct dnf module, we need to know the MariaDB version. In some cases, we will not
+        # be able to call `mariadb --version` because the required libraries might not be available on
+        # the Cloudlinux 8 side. Therefore, we need to store the MariaDB version on the CloudLinux 7 side.
+        mariadb_version = mariadb.get_installed_mariadb_version()
+        with open(self.mariadb_version_file, "w") as file:
+            file.write(str(mariadb_version))
+
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
@@ -232,13 +243,19 @@ class UpdateGuvernorMariadb(action.ActiveAction):
         for repofile in repofiles:
             leapp_configs.adopt_repositories(repofile)
 
-        mariadb_packages = rpm.get_installed_packages_list("cl-MariaDB*")
-        mariadb_version = mariadb.get_installed_mariadb_version()
+        mariadb_packages = [pkg[0] for pkg in rpm.get_installed_packages_list("cl-MariaDB*")]
+
+        mariadb_version = None
+        with open(self.mariadb_version_file, "r") as file:
+            mariadb_version = mariadb.MariaDBVersion(file.readline().strip())
+        if not mariadb_version:
+            raise Exception("Unable to determine the MariaDB version. You could inject the version manually into the file '{}'".format(self.mariadb_version_file))
+
         mariadb_module = f"mariadb:cl-MariaDB{mariadb_version.major}{mariadb_version.minor}"
         log.debug(f"Going to reinstall following packages with enabled dnf module {mariadb_module!r}: {mariadb_packages}")
 
         rpm.remove_packages(rpm.filter_installed_packages(mariadb_packages))
-        util.logged_check_call(["dnf", "module", "enable", mariadb_module])
+        util.logged_check_call(["dnf", "module", "-y", "enable", mariadb_module])
         rpm.install_packages(mariadb_packages)
 
         return action.ActionResult()
