@@ -232,7 +232,7 @@ class UpdateGuvernorMariadb(action.ActiveAction):
         for repofile in repofiles:
             leapp_configs.adopt_repositories(repofile)
 
-        mariadb_packages = rpm.get_installed_packages_list("cl-MariaDB*")
+        mariadb_packages = [pkg[0] for pkg in rpm.get_installed_packages_list("cl-MariaDB*")]
         mariadb_version = mariadb.get_installed_mariadb_version()
         mariadb_module = f"mariadb:cl-MariaDB{mariadb_version.major}{mariadb_version.minor}"
         log.debug(f"Going to reinstall following packages with enabled dnf module {mariadb_module!r}: {mariadb_packages}")
