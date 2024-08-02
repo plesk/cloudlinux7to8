@@ -238,7 +238,7 @@ class UpdateGuvernorMariadb(action.ActiveAction):
         log.debug(f"Going to reinstall following packages with enabled dnf module {mariadb_module!r}: {mariadb_packages}")
 
         rpm.remove_packages(rpm.filter_installed_packages(mariadb_packages))
-        util.logged_check_call(["dnf", "module", "enable", mariadb_module])
+        util.logged_check_call(["dnf", "module", "-y", "enable", mariadb_module])
         rpm.install_packages(mariadb_packages)
 
         return action.ActionResult()
