@@ -219,6 +219,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.AssertRedHatKernelInstalled(),
             custom_actions.AssertLastInstalledKernelInUse(),
             custom_actions.AssertLocalRepositoryNotPresent(),
+            centos2alma_actions.AssertIPRepositoryNotPresent(),
             custom_actions.AssertNoRepositoryDuplicates(),
             custom_actions.AssertMariadbRepoAvailable(),
             common_actions.AssertNotInContainer(),
