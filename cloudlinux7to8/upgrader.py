@@ -138,6 +138,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             ],
             "Handle plesk related services": [
                 common_actions.DisablePleskRelatedServicesDuringUpgrade(),
+                common_actions.HandlePleskFirewallService(),
             ],
             "Handle packages and services": [
                 custom_actions.FixOsVendorPhpFpmConfiguration(),
