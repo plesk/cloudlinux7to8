@@ -286,3 +286,80 @@ class AddMysqlConnector(action.ActiveAction):
 
     def _revert_action(self) -> action.ActionResult:
         return action.ActionResult()
+
+
+class ReinstallMariadbConflictPackages(action.ActiveAction):
+    """
+    ReinstallMariadbConflictPackages is an action class that handles the removal and reinstallation
+    of conflicting MariaDB packages during a system upgrade.
+
+    Some packages are unavailable from the Cloudlinux mariadb repository, so we must remove them before conversion.
+    However, we also need to avoid installing their analogues at the finishing stage.
+    This is why we have separated this action from the ReinstallConflictPackages.
+
+    Attributes:
+        removed_packages_file (str): Path to the file where removed packages are logged.
+
+    Methods:
+        __init__(temp_directory: str) -> None:
+            Initializes the action with a temporary directory for logging removed packages.
+
+        _prepare_action() -> action.ActionResult:
+            Preparation conversion by removing conflicting packages if MariaDB Governor is not installed.
+            Logs the removed packages to a file.
+
+        _post_action() -> action.ActionResult:
+            Reinstalls the previously removed packages after the conversion is completed.
+            Removes the log file after reinstallation.
+
+        _revert_action() -> action.ActionResult:
+            Reinstalls the previously removed packages if the action needs to be reverted.
+            Removes the log file after reinstallation.
+    """
+
+    removed_packages_file: str
+
+    def __init__(self, temp_directory: str) -> None:
+        self.name = "reinstall mariadb conflict packages"
+        self.removed_packages_file = temp_directory + "/cloudlinux7to8_removed_mariadb_packages.txt"
+        self.conflict_pkgs_map = {
+            "galera": "galera",
+        }
+
+    def _prepare_action(self) -> action.ActionResult:
+        packages_to_remove = rpm.filter_installed_packages(["galera"])
+        rpm.remove_packages(packages_to_remove)
+
+        # Avoid reinstallation if mariadb installed by governor
+        if _is_governor_mariadb_installed():
+            return action.ActionResult()
+
+        with open(self.removed_packages_file, "a") as f:
+            f.write("\n".join(packages_to_remove) + "\n")
+
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        if not os.path.exists(self.removed_packages_file):
+            return action.ActionResult()
+
+        with open(self.removed_packages_file, "r") as f:
+            packages_to_install = [self.conflict_pkgs_map[pkg] for pkg in set(f.read().splitlines())]
+            rpm.install_packages(packages_to_install)
+
+        os.unlink(self.removed_packages_file)
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        if not os.path.exists(self.removed_packages_file):
+            return action.ActionResult()
+
+        with open(self.removed_packages_file, "r") as f:
+            packages_to_install = list(set(f.read().splitlines()))
+            rpm.install_packages(packages_to_install)
+
+        os.unlink(self.removed_packages_file)
+        return action.ActionResult()
+
+    def estimate_prepare_time(self) -> int:
+        return 5
