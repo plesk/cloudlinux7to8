@@ -84,7 +84,6 @@ class ReinstallConflictPackages(action.ActiveAction):
         self.name = "re-installing common conflict packages"
         self.removed_packages_file = temp_directory + "/cloudlinux7to8_removed_packages.txt"
         self.conflict_pkgs_map = {
-            "galera": "galera",
             "python36-argcomplete": "python3-argcomplete",
             "python36-cffi": "python3-cffi",
             "python36-chardet": "python3-chardet",

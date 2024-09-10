@@ -146,6 +146,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.RemovingPleskConflictPackages(),
                 custom_actions.ReinstallPleskComponents(),
                 custom_actions.ReinstallConflictPackages(options.state_dir),
+                custom_actions.ReinstallMariadbConflictPackages(options.state_dir),
                 custom_actions.ReinstallPerlCpanModules(options.state_dir),
                 custom_actions.DisableSuspiciousKernelModules(),
                 common_actions.HandleUpdatedSpamassassinConfig(),
