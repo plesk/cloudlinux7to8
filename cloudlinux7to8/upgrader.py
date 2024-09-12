@@ -26,6 +26,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
         self.upgrade_postgres_allowed = False
         self.remove_unknown_perl_modules = False
         self.disable_spamassasin_plugins = False
+        self.amavis_upgrade_allowed = False
 
     def __repr__(self) -> str:
         attrs = ", ".join(f"{k}={getattr(self, k)!r}" for k in (
@@ -152,6 +153,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.HandleUpdatedSpamassassinConfig(),
                 common_actions.DisableSelinuxDuringUpgrade(),
                 custom_actions.RestoreMissingNginx(),
+                common_actions.ReinstallAmavisAntivirus(),
             ],
             "First plesk start": [
                 common_actions.StartPleskBasicServices(),
@@ -208,6 +210,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             return [custom_actions.AssertDistroIsCloudLinux8()]
 
         FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION = "5.6"
+        CLOUDLINUX8_AMAVIS_REQUIRED_RAM = int(1.5 * 1024 * 1024 * 1024)
         checks = [
             common_actions.AssertPleskVersionIsAvailable(),
             common_actions.AssertPleskInstallerNotInProgress(),
@@ -230,6 +233,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.AssertMinGovernorMariadbVersion(custom_actions.FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION),
             custom_actions.AssertGovernorMysqlNotInstalled(custom_actions.FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION),
             common_actions.AssertNoMoreThenOneKernelDevelInstalled(),
+            common_actions.AssertEnoughRamForAmavis(CLOUDLINUX8_AMAVIS_REQUIRED_RAM, self.amavis_upgrade_allowed),
         ]
 
         if not self.upgrade_postgres_allowed:
@@ -284,11 +288,14 @@ the log file.
             dest="disable_spamassasin_plugins", default=False,
             help="Disable additional plugins in spamassasin configuration during the conversion."
         )
+        parser.add_argument("--amavis-upgrade-allowed", action="store_true", dest="amavis_upgrade_allowed", default=False,
+                            help="Allow to upgrade amavis antivirus even if there is not enough RAM available.")
         options = parser.parse_args(args)
 
         self.upgrade_postgres_allowed = options.upgrade_postgres_allowed
         self.remove_unknown_perl_modules = options.remove_unknown_perl_modules
         self.disable_spamassasin_plugins = options.disable_spamassasin_plugins
+        self.amavis_upgrade_allowed = options.amavis_upgrade_allowed
 
 
 class CloudLinux7to8Factory(DistUpgraderFactory):
