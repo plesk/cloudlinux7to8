@@ -134,9 +134,10 @@ class ReinstallConflictPackages(action.ActiveAction):
             log.warn("File with removed packages list does not exist. While the action itself was not skipped. Skip reinstalling packages.")
             return action.ActionResult()
 
-        with open(self.removed_packages_file, "r") as f:
-            packages_to_install = [self.conflict_pkgs_map[pkg] for pkg in set(f.read().splitlines())]
-            rpm.install_packages(packages_to_install)
+        if os.path.getsize(self.removed_packages_file) > 0:
+            with open(self.removed_packages_file, "r") as f:
+                packages_to_install = [self.conflict_pkgs_map[pkg] for pkg in set(f.read().splitlines())]
+                rpm.install_packages(packages_to_install)
 
         os.unlink(self.removed_packages_file)
         return action.ActionResult()
@@ -146,9 +147,10 @@ class ReinstallConflictPackages(action.ActiveAction):
             log.warn("File with removed packages list does not exist. While the action itself was not skipped. Skip reinstalling packages.")
             return action.ActionResult()
 
-        with open(self.removed_packages_file, "r") as f:
-            packages_to_install = list(set(f.read().splitlines()))
-            rpm.install_packages(packages_to_install)
+        if os.path.getsize(self.removed_packages_file) > 0:
+            with open(self.removed_packages_file, "r") as f:
+                packages_to_install = list(set(f.read().splitlines()))
+                rpm.install_packages(packages_to_install)
 
         os.unlink(self.removed_packages_file)
         return action.ActionResult()
