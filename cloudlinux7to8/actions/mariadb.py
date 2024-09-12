@@ -331,7 +331,8 @@ class ReinstallMariadbConflictPackages(action.ActiveAction):
         rpm.remove_packages(packages_to_remove)
 
         # Avoid reinstallation if mariadb installed by governor
-        if _is_governor_mariadb_installed():
+        # if there are no such packages installed, don't create the file as well
+        if _is_governor_mariadb_installed() or len(packages_to_remove) == 0:
             return action.ActionResult()
 
         with open(self.removed_packages_file, "a") as f:
@@ -343,9 +344,10 @@ class ReinstallMariadbConflictPackages(action.ActiveAction):
         if not os.path.exists(self.removed_packages_file):
             return action.ActionResult()
 
-        with open(self.removed_packages_file, "r") as f:
-            packages_to_install = [self.conflict_pkgs_map[pkg] for pkg in set(f.read().splitlines())]
-            rpm.install_packages(packages_to_install)
+        if os.path.getsize(self.removed_packages_file) > 0:
+            with open(self.removed_packages_file, "r") as f:
+                packages_to_install = [self.conflict_pkgs_map[pkg] for pkg in set(f.read().splitlines())]
+                rpm.install_packages(packages_to_install)
 
         os.unlink(self.removed_packages_file)
         return action.ActionResult()
@@ -354,9 +356,10 @@ class ReinstallMariadbConflictPackages(action.ActiveAction):
         if not os.path.exists(self.removed_packages_file):
             return action.ActionResult()
 
-        with open(self.removed_packages_file, "r") as f:
-            packages_to_install = list(set(f.read().splitlines()))
-            rpm.install_packages(packages_to_install)
+        if os.path.getsize(self.removed_packages_file) > 0:
+            with open(self.removed_packages_file, "r") as f:
+                packages_to_install = list(set(f.read().splitlines()))
+                rpm.install_packages(packages_to_install)
 
         os.unlink(self.removed_packages_file)
         return action.ActionResult()
