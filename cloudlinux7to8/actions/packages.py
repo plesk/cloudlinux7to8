@@ -376,3 +376,24 @@ class AdoptAtomicRepositories(action.ActiveAction):
 
     def _revert_action(self) -> action.ActionResult:
         return action.ActionResult()
+
+
+class SwitchClnChannel(action.ActiveAction):
+    def __init__(self) -> None:
+        self.name = "switching CLN channel"
+
+    def _prepare_action(self) -> action.ActionResult:
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        # Switch from 7 to 8 is done internally by leapp
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        util.logged_check_call(["/usr/sbin/cln-switch-channel", "-t", "7", "-o", "-f"])
+        # Probably not really needed, but that's the way forward leapp logic is set up
+        util.logged_check_call(["/usr/bin/yum", "clean", "all"])
+        return action.ActionResult()
+
+    def estimate_revert_time(self) -> int:
+        return 2

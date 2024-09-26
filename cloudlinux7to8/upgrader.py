@@ -166,6 +166,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             ],
             "Repositories handling": [
                 custom_actions.AdoptRepositories(),
+                custom_actions.SwitchClnChannel(),
             ],
             "Do convert": [
                 custom_actions.RemovePleskBaseRepository(),
