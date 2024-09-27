@@ -32,7 +32,7 @@ class LeappInstallation(action.ActiveAction):
         util.logged_check_call(["/usr/bin/yum-config-manager", "--disable", "elevate"])
         return action.ActionResult()
 
-    def _post_action(self) -> action.ActionResult:
+    def remove_all(self, include_logs: bool = True) -> None:
         rpm.remove_packages(
             rpm.filter_installed_packages(
                 self.pkgs_to_install + ["elevate-release", "leapp-upgrade-el7toel8"]
@@ -49,16 +49,20 @@ class LeappInstallation(action.ActiveAction):
         leapp_related_directories = [
             "/etc/leapp",
             "/var/lib/leapp",
-            "/var/log/leapp",
             "/usr/lib/python2.7/site-packages/leapp",
         ]
+        if include_logs:
+            leapp_related_directories.append("/var/log/leapp")
         for directory in leapp_related_directories:
             if os.path.exists(directory):
                 shutil.rmtree(directory)
 
+    def _post_action(self) -> action.ActionResult:
+        self.remove_all()
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
+        self.remove_all(False)
         return action.ActionResult()
 
     def estimate_prepare_time(self) -> int:

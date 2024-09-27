@@ -213,7 +213,7 @@ class AdoptRepositories(action.ActiveAction):
     def _post_action(self) -> action.ActionResult:
         self._use_rpmnew_repositories()
         self._adopt_plesk_repositories()
-        util.logged_check_call(["/usr/bin/dnf", "-y", "update"])
+        util.logged_check_call(["/usr/bin/dnf", "-y", "update", "--disablerepo=elevate"])
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
