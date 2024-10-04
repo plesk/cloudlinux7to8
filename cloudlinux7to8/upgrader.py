@@ -105,10 +105,12 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.LeappInstallation(
                     custom_actions.LEAPP_CLOUDLINUX_RPM_URL,
                     [
-                        "leapp",
-                        "python2-leapp",
-                        "leapp-data-cloudlinux",
-                        "leapp-upgrade"
+                        "leapp-0.17.0-1.el7",
+                        "python2-leapp-0.17.0-1.el7",
+                        "leapp-data-cloudlinux-0.3-2.el7.20240821",
+                        "leapp-deps-0.17.0-1.el7",
+                        "leapp-upgrade-el7toel8-0.20.0-2.el7",
+                        "leapp-upgrade-el7toel8-deps-0.20.0-2.el7",
                     ]
                 ),
             ],
