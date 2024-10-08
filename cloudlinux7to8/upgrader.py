@@ -157,6 +157,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.DisableSelinuxDuringUpgrade(),
                 custom_actions.RestoreMissingNginx(),
                 common_actions.ReinstallAmavisAntivirus(),
+                custom_actions.HandleInternetxRepository(),
             ],
             "First plesk start": [
                 common_actions.StartPleskBasicServices(),
