@@ -2,6 +2,7 @@
 import os
 import typing
 import shutil
+import re
 
 from pleskdistup.common import action, files, leapp_configs, log, motd, packages, rpm, systemd, util
 
@@ -397,3 +398,50 @@ class SwitchClnChannel(action.ActiveAction):
 
     def estimate_revert_time(self) -> int:
         return 2
+
+
+class CheckSourcePointsToArchiveURL(action.CheckAction):
+    AUTOINSTALLERRC_PATH = os.path.expanduser('~/.autoinstallerrc')
+
+    def __init__(self):
+        self.name = "checking if SOURCE points to old archive"
+        self.description = f"""Old archive doesn't serve up-to-date Plesk.
+\tEdit {self.AUTOINSTALLERRC_PATH} and change SOURCE - i.e. https://autoinstall.plesk.com
+""".format(self)
+
+    def _do_check(self) -> bool:
+        if not os.path.exists(self.AUTOINSTALLERRC_PATH):
+            return True
+        p = re.compile('^\s*SOURCE\s*=\s*https?://autoinstall-archives.plesk.com')
+        with open(self.AUTOINSTALLERRC_PATH) as f:
+            for line in f:
+                if p.search(line):
+                    return False
+        return True
+
+
+class HandleInternetxRepository(action.ActiveAction):
+    KNOWN_INTERNETX_REPO_FILES = ["internetx.repo"]
+
+    def __init__(self):
+        self.name = "handling InternetX repository"
+
+    def is_required(self) -> bool:
+        return len(files.find_files_case_insensitive("/etc/yum.repos.d", self.KNOWN_INTERNETX_REPO_FILES)) > 0
+
+    def _prepare_action(self) -> action.ActionResult:
+        for file in files.find_files_case_insensitive("/etc/yum.repos.d", self.KNOWN_INTERNETX_REPO_FILES):
+            files.backup_file(file)
+            leapp_configs.add_repositories_mapping([file])
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        for file in files.find_files_case_insensitive("/etc/yum.repos.d", self.KNOWN_INTERNETX_REPO_FILES):
+            files.remove_backup(file)
+            leapp_configs.adopt_repositories(file)
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        for file in files.find_files_case_insensitive("/etc/yum.repos.d", self.KNOWN_INTERNETX_REPO_FILES):
+            files.restore_file_from_backup(file)
+        return action.ActionResult()
