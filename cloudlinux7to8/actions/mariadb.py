@@ -97,6 +97,8 @@ class UpdateModernMariadb(action.ActiveAction):
 
         log.debug("Set repository mapping in the leapp configuration file")
         leapp_configs.set_package_repository("mariadb", "alma-mariadb")
+
+        _remove_mariadb_packages()
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
