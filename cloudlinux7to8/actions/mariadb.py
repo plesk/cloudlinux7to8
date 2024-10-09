@@ -109,8 +109,10 @@ class UpdateModernMariadb(action.ActiveAction):
 
         mariadb_repo_id, _1, _2, _3, _4, _5 = [repo for repo in rpm.extract_repodata(repofiles[0])][0]
 
+        packages = ["MariaDB-client", "MariaDB-server"]
+        rpm.install_packages(packages, repository=mariadb_repo_id, simulate=True)
         _remove_mariadb_packages()
-        rpm.install_packages(["MariaDB-client", "MariaDB-server"], repository=mariadb_repo_id)
+        rpm.install_packages(packages, repository=mariadb_repo_id)
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
@@ -142,8 +144,10 @@ class UpdateMariadbDatabase(action.ActiveAction):
             files.backup_file(repofile)
             os.unlink(repofile)
 
+        packages = ["mariadb", "mariadb-server"]
+        rpm.install_packages(packages, simulate=True)
         _remove_mariadb_packages()
-        rpm.install_packages(["mariadb", "mariadb-server"])
+        rpm.install_packages(packages)
 
         # We should be sure mariadb is started, otherwise restore wouldn't work
         util.logged_check_call(["/usr/bin/systemctl", "start", "mariadb"])
@@ -254,8 +258,9 @@ class UpdateGuvernorMariadb(action.ActiveAction):
         mariadb_module = f"mariadb:cl-MariaDB{mariadb_version.major}{mariadb_version.minor}"
         log.debug(f"Going to reinstall following packages with enabled dnf module {mariadb_module!r}: {mariadb_packages}")
 
-        rpm.remove_packages(rpm.filter_installed_packages(mariadb_packages))
         util.logged_check_call(["dnf", "module", "-y", "enable", mariadb_module])
+        rpm.install_packages(mariadb_packages, simulate=True)
+        rpm.remove_packages(rpm.filter_installed_packages(mariadb_packages))
         rpm.install_packages(mariadb_packages)
 
         return action.ActionResult()
