@@ -176,6 +176,9 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.RemovePleskBaseRepository(),
                 custom_actions.DoCloudLinux7to8Convert(),
             ],
+            "Resume": [
+                common_actions.RestoreInProgressSshLoginMessage(new_os),
+            ],
             "Pause before reboot": [
             ],
             "Reboot": [
