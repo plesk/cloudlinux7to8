@@ -44,6 +44,8 @@ To prepare the latest version of the tool for use from a command line, please ru
 > chmod 755 cloudlinux7to8
 ```
 
+ANYTHING!
+
 To monitor the conversion process, we recommend using the ['screen' utility](https://www.gnu.org/software/screen/) to run the script in the background. To do so, run the following command:
 ```shell
 > screen -S cloudlinux7to8
