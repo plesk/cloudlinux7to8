@@ -137,6 +137,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.FixSyslogLogrotateConfig(options.state_dir),
                 common_actions.SetMinDovecotDhParamSize(dhparam_size=2048),
                 common_actions.RestoreDovecotConfiguration(options.state_dir),
+                common_actions.RestoreRoundcubeConfiguration(options.state_dir),
                 custom_actions.RecreateAwstatsConfigurationFiles(),
                 common_actions.UninstallTuxcareEls(),
             ],
