@@ -245,6 +245,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.CheckSourcePointsToArchiveURL(),
             common_actions.AssertNoMoreThenOneKernelDevelInstalled(),
             common_actions.AssertEnoughRamForAmavis(CLOUDLINUX8_AMAVIS_REQUIRED_RAM, self.amavis_upgrade_allowed),
+            common_actions.AssertFstabOrderingIsFine(),
         ]
 
         if not self.upgrade_postgres_allowed:
