@@ -27,6 +27,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
         self.remove_unknown_perl_modules = False
         self.disable_spamassasin_plugins = False
         self.amavis_upgrade_allowed = False
+        self.allow_raid_devices = False
 
     def __repr__(self) -> str:
         attrs = ", ".join(f"{k}={getattr(self, k)!r}" for k in (
@@ -246,6 +247,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             common_actions.AssertNoMoreThenOneKernelDevelInstalled(),
             common_actions.AssertEnoughRamForAmavis(CLOUDLINUX8_AMAVIS_REQUIRED_RAM, self.amavis_upgrade_allowed),
             common_actions.AssertFstabOrderingIsFine(),
+            common_actions.AssertFstabHasDirectRaidDevices(self.allow_raid_devices),
         ]
 
         if not self.upgrade_postgres_allowed:
@@ -304,12 +306,15 @@ the log file.
         )
         parser.add_argument("--amavis-upgrade-allowed", action="store_true", dest="amavis_upgrade_allowed", default=False,
                             help="Allow to upgrade amavis antivirus even if there is not enough RAM available.")
+        parser.add_argument("--allow-raid-devices", action="store_true", dest="allow_raid_devices", default=False,
+                            help="Allow to have direct RAID devices in /etc/fstab. This could lead to unbootable system after the conversion so use the option on your own risk.")
         options = parser.parse_args(args)
 
         self.upgrade_postgres_allowed = options.upgrade_postgres_allowed
         self.remove_unknown_perl_modules = options.remove_unknown_perl_modules
         self.disable_spamassasin_plugins = options.disable_spamassasin_plugins
         self.amavis_upgrade_allowed = options.amavis_upgrade_allowed
+        self.allow_raid_devices = options.allow_raid_devices
 
 
 class CloudLinux7to8Factory(DistUpgraderFactory):
