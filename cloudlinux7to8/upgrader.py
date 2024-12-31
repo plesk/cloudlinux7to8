@@ -120,6 +120,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.RevertChangesInGrub(),
                 custom_actions.PrepareLeappConfigurationBackup(),
                 custom_actions.RemoveOldMigratorThirdparty(),
+                custom_actions.FetchKernelCareGPGKey(),
                 custom_actions.LeappReposConfiguration(),
                 custom_actions.LeappChoicesConfiguration(),
                 custom_actions.AdoptKolabRepositories(),
