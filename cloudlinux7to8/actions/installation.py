@@ -11,11 +11,13 @@ LEAPP_CLOUDLINUX_RPM_URL = "https://repo.cloudlinux.com/elevate/elevate-release-
 class LeappInstallation(action.ActiveAction):
     pkgs_to_install: typing.List[str]
     elevate_release_rpm_url: str
+    remove_logs_on_finish: bool
 
-    def __init__(self, elevate_release_rpm_url: str, pkgs_to_install: typing.List[str]):
+    def __init__(self, elevate_release_rpm_url: str, pkgs_to_install: typing.List[str], remove_logs_on_finish: bool = False):
         self.name = "installing leapp"
         self.pkgs_to_install = pkgs_to_install
         self.elevate_release_rpm_url = elevate_release_rpm_url
+        self.remove_logs_on_finish = remove_logs_on_finish
 
     def _prepare_action(self) -> action.ActionResult:
         if not rpm.is_package_installed("elevate-release"):
@@ -58,11 +60,11 @@ class LeappInstallation(action.ActiveAction):
                 shutil.rmtree(directory)
 
     def _post_action(self) -> action.ActionResult:
-        self.remove_all()
+        self.remove_all(include_logs=self.remove_logs_on_finish)
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
-        self.remove_all(False)
+        self.remove_all(include_logs=False)
         return action.ActionResult()
 
     def estimate_prepare_time(self) -> int:

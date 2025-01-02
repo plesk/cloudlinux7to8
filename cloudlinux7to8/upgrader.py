@@ -28,6 +28,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
         self.disable_spamassasin_plugins = False
         self.amavis_upgrade_allowed = False
         self.allow_raid_devices = False
+        self.remove_leapp_logs = False
 
     def __repr__(self) -> str:
         attrs = ", ".join(f"{k}={getattr(self, k)!r}" for k in (
@@ -113,7 +114,8 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                         "leapp-deps-0.17.0-1.el7",
                         "leapp-upgrade-el7toel8-0.20.0-2.el7",
                         "leapp-upgrade-el7toel8-deps-0.20.0-2.el7",
-                    ]
+                    ],
+                    remove_logs_on_finish=self.remove_leapp_logs
                 ),
             ],
             "Prepare configurations": [
@@ -309,6 +311,8 @@ the log file.
                             help="Allow to upgrade amavis antivirus even if there is not enough RAM available.")
         parser.add_argument("--allow-raid-devices", action="store_true", dest="allow_raid_devices", default=False,
                             help="Allow to have direct RAID devices in /etc/fstab. This could lead to unbootable system after the conversion so use the option on your own risk.")
+        parser.add_argument("--remove-leapp-logs", action="store_true", dest="remove_leapp_logs", default=False,
+                            help="Remove leapp logs after the conversion. By default, the logs are removed after the conversion.")
         options = parser.parse_args(args)
 
         self.upgrade_postgres_allowed = options.upgrade_postgres_allowed
@@ -316,6 +320,7 @@ the log file.
         self.disable_spamassasin_plugins = options.disable_spamassasin_plugins
         self.amavis_upgrade_allowed = options.amavis_upgrade_allowed
         self.allow_raid_devices = options.allow_raid_devices
+        self.remove_leapp_logs = options.remove_leapp_logs
 
 
 class CloudLinux7to8Factory(DistUpgraderFactory):
