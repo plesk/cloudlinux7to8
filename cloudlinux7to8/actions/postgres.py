@@ -1,4 +1,4 @@
-# Copyright 2024. WebPros International GmbH. All rights reserved.
+# Copyright 2025. WebPros International GmbH. All rights reserved.
 import locale
 import os
 import subprocess
