@@ -83,7 +83,11 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             "/var/log/leapp/leapp-report.txt",
             "/var/log/leapp/leapp-preupgrade.log",
             "/var/log/leapp/leapp-upgrade.log",
+            "/etc/grub2.cfg",
         ]
+
+        for grub_directory in ("/etc/grub.d", "/boot/grub", "/boot/grub2"):
+            feed.attached_files += files.find_files_case_insensitive(grub_directory, ["*"])
 
         for repofile in files.find_files_case_insensitive("/etc/yum.repos.d", ["*.repo*"]):
             feed.attached_files.append(repofile)
