@@ -5,7 +5,7 @@ import os
 import typing
 
 from pleskdistup import actions as common_actions
-from pleskdistup.common import action, dist, feedback, files, util
+from pleskdistup.common import action, dist, feedback, files, version, util
 from pleskdistup.phase import Phase
 from pleskdistup.messages import REBOOT_WARN_MESSAGE
 from pleskdistup.upgrader import DistUpgrader, DistUpgraderFactory, PathType
@@ -29,6 +29,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
         self.amavis_upgrade_allowed = False
         self.allow_raid_devices = False
         self.remove_leapp_logs = False
+        self.allow_old_script_version = False
 
     def __repr__(self) -> str:
         attrs = ", ".join(f"{k}={getattr(self, k)!r}" for k in (
@@ -56,6 +57,8 @@ class CloudLinux7to8Upgrader(DistUpgrader):
 
     @property
     def upgrader_version(self) -> str:
+        if cloudlinux7to8.config.version:
+            return cloudlinux7to8.config.version + "-" + cloudlinux7to8.config.revision[:8]
         return cloudlinux7to8.config.revision
 
     @property
@@ -265,6 +268,8 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             checks.append(custom_actions.AssertThereIsNoUnknownPerlCpanModules())
         if not self.disable_spamassasin_plugins:
             checks.append(common_actions.AssertSpamassassinAdditionalPluginsDisabled())
+        if not self.allow_old_script_version and cloudlinux7to8.config.version:
+            checks.append(common_actions.AssertScriptVersionUpToDate("https://github.com/plesk/cloudlinux7to8", "cloudlinux7to8", version.DistupgradeToolVersion(cloudlinux7to8.config.version)))
 
         return checks
 
@@ -317,6 +322,8 @@ the log file.
                             help="Allow to have direct RAID devices in /etc/fstab. This could lead to unbootable system after the conversion so use the option on your own risk.")
         parser.add_argument("--remove-leapp-logs", action="store_true", dest="remove_leapp_logs", default=False,
                             help="Remove leapp logs after the conversion. By default, the logs are removed after the conversion.")
+        parser.add_argument("--allow-old-script-version", action="store_true", dest="allow_old_script_version", default=False,
+                            help="Allow to run the script with an old version. By default, the script checks for a new version on GitHub and does not allow to run with an old one.")
         options = parser.parse_args(args)
 
         self.upgrade_postgres_allowed = options.upgrade_postgres_allowed
@@ -325,6 +332,7 @@ the log file.
         self.amavis_upgrade_allowed = options.amavis_upgrade_allowed
         self.allow_raid_devices = options.allow_raid_devices
         self.remove_leapp_logs = options.remove_leapp_logs
+        self.allow_old_script_version = options.allow_old_script_version
 
 
 class CloudLinux7to8Factory(DistUpgraderFactory):
