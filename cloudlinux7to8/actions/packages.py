@@ -6,6 +6,8 @@ import re
 
 from pleskdistup.common import action, files, leapp_configs, log, motd, packages, rpm, systemd, util
 
+BASE_REPO_PATH = "/etc/yum.repos.d/base.repo"
+
 
 class RemovingPleskConflictPackages(action.ActiveAction):
     conflict_pkgs: typing.List[str]
@@ -212,9 +214,14 @@ class AdoptRepositories(action.ActiveAction):
             ])
             leapp_configs.adopt_repositories(file)
 
+    def _adopt_base_repository(self) -> None:
+        if os.path.exists(BASE_REPO_PATH):
+            leapp_configs.adopt_repositories(BASE_REPO_PATH)
+
     def _post_action(self) -> action.ActionResult:
         self._use_rpmnew_repositories()
         self._adopt_plesk_repositories()
+        self._adopt_base_repository()
         util.logged_check_call(["/usr/bin/dnf", "-y", "update", "--disablerepo=elevate"])
         return action.ActionResult()
 
@@ -228,7 +235,7 @@ class AdoptRepositories(action.ActiveAction):
 class RemovePleskBaseRepository(action.ActiveAction):
     # In some cases we have plesk specific base repository, which will not be
     # fixed by the leapp converter. So we have to remove it manually.
-    base_repo_path: str = "/etc/yum.repos.d/base.repo"
+    base_repo_path: str = BASE_REPO_PATH
 
     def __init__(self) -> None:
         self.name = "removing base repository"
@@ -445,4 +452,24 @@ class HandleInternetxRepository(action.ActiveAction):
     def _revert_action(self) -> action.ActionResult:
         for file in files.find_files_case_insensitive("/etc/yum.repos.d", self.KNOWN_INTERNETX_REPO_FILES):
             files.restore_file_from_backup(file)
+        return action.ActionResult()
+
+
+class DisableBaseRepoUpdatesRepository(action.ActiveAction):
+    base_repo_path: str = BASE_REPO_PATH
+
+    def __init__(self) -> None:
+        self.name = "disabling updates repository"
+
+    def _prepare_action(self) -> action.ActionResult:
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        if os.path.exists(self.base_repo_path):
+            rpm.remove_repositories(self.base_repo_path, [
+                lambda _1, _2, baseurl, _3, _4: baseurl is not None and "mirror.pp.plesk.tech/cloudlinux/7/updates" in baseurl,
+            ])
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
         return action.ActionResult()
