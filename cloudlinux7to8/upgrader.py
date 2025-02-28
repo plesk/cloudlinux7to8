@@ -186,6 +186,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.SwitchClnChannel(),
             ],
             "Do convert": [
+                custom_actions.DisableBaseRepoUpdatesRepository(),
                 custom_actions.RemovePleskBaseRepository(),
                 custom_actions.DoCloudLinux7to8Convert(),
             ],
