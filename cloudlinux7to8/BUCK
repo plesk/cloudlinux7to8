@@ -14,7 +14,7 @@ genrule(
         sed -e "s/@@PRODUCT_VERSION@@/$PRODUCT_VERSION/g; s/@@PRODUCT_REVISION@@/$PRODUCT_REVISION/g" "$SRCS" >"$OUT"
     '''.format(
         version=get_product_version(),
-        revision=get_product_revision(),
+        revision=get_git_revision(),
     ),
 )
 
