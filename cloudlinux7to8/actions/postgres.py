@@ -4,7 +4,7 @@ import os
 import subprocess
 import typing
 
-from pleskdistup.common import action, files, leapp_configs, log, postgres, util
+from pleskdistup.common import action, files, leapp_configs, log, postgres, systemd, util
 
 _ALMA8_POSTGRES_VERSION = 10
 
@@ -29,6 +29,10 @@ class AssertPostgresLocaleMatchesSystemOne(action.CheckAction):
         self.service_name = 'postgresql'
 
     def _do_check(self):
+        if not systemd.is_service_exists(self.service_name):
+            log.debug(f"Postgres service {self.service_name} does not exist. Skip system locale for postgresql pre-check.")
+            return False
+
         config_path = os.path.join(postgres.get_data_path(), 'pg_hba.conf')
 
         try:
