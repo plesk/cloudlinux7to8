@@ -35,8 +35,7 @@ def _is_governor_mariadb_installed() -> bool:
     repofiles = _find_mariadb_repo_files()
     for repofile in repofiles:
         for repo in rpm.extract_repodata(repofile):
-            _, _, repo_baseurl, _, _, _ = repo
-            if repo_baseurl and "repo.cloudlinux.com" in repo_baseurl and ("cl-mariadb" in repo_baseurl or "cl-mysql" in repo_baseurl):
+            if repo.url and "repo.cloudlinux.com" in repo.url and ("cl-mariadb" in repo.url or "cl-mysql" in repo.url):
                 return True
 
     return False
@@ -62,15 +61,14 @@ The MariaDB repository with id '{}' from the file '{}' is not accessible.
 
         for repofile in repofiles:
             for repo in rpm.extract_repodata(repofile):
-                repo_id, _, repo_baseurl, _, _, _ = repo
-                if not repo_baseurl or ".mariadb.org" not in repo_baseurl:
+                if not repo.url or ".mariadb.org" not in repo.url:
                     continue
 
                 # Since repository will be deprecated for any distro at once it looks fine to check only for 7 on x86_64
-                repo_baseurl = repo_baseurl.replace("$releasever", "7").replace("$basearch", "x86_64")
+                repo_baseurl = repo.url.replace("$releasever", "7").replace("$basearch", "x86_64")
                 result = subprocess.run(["curl", "-s", "-o", "/dev/null", "-f", repo_baseurl])
                 if result.returncode != 0:
-                    self.description = self.description.format(repo_id, repofile)
+                    self.description = self.description.format(repo.id, repofile)
                     return False
 
         return True
@@ -109,12 +107,12 @@ class UpdateModernMariadb(action.ActiveAction):
         for repofile in repofiles:
             leapp_configs.adopt_repositories(repofile)
 
-        mariadb_repo_id, _1, _2, _3, _4, _5 = [repo for repo in rpm.extract_repodata(repofiles[0])][0]
+        repo = [repo for repo in rpm.extract_repodata(repofiles[0])][0]
 
         packages = ["MariaDB-client", "MariaDB-server"]
-        rpm.install_packages(packages, repository=mariadb_repo_id, simulate=True)
+        rpm.install_packages(packages, repository=repo.id, simulate=True)
         _remove_mariadb_packages()
-        rpm.install_packages(packages, repository=mariadb_repo_id)
+        rpm.install_packages(packages, repository=repo.id)
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:

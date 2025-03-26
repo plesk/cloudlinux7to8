@@ -208,9 +208,8 @@ class AdoptRepositories(action.ActiveAction):
     def _adopt_plesk_repositories(self) -> None:
         for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*.repo"]):
             rpm.remove_repositories(file, [
-                lambda id, _1, _2, _3, _4: id in ["PLESK_17_PHP52", "PLESK_17_PHP53",
-                                                  "PLESK_17_PHP54", "PLESK_17_PHP55",
-                                                  "PLESK_17_PHP56", "PLESK_17_PHP70"],
+                lambda repo: repo.id in ["PLESK_17_PHP52", "PLESK_17_PHP53",
+                                         "PLESK_17_PHP54", "PLESK_17_PHP55"],
             ])
             leapp_configs.adopt_repositories(file)
 
@@ -247,9 +246,9 @@ class RemovePleskBaseRepository(action.ActiveAction):
         return action.ActionResult()
 
     def _is_plesk_base(self, repo_file: str) -> bool:
-        for id, _2, baseurl, _3, _4, _5 in rpm.extract_repodata(repo_file):
-            if baseurl and "psabr.aws.plesk.tech/share/mirror/cloudlinux/7" in baseurl:
-                log.info(f"Plesk base repo found in {repo_file!r} by repository {id!r}")
+        for repo in rpm.extract_repodata(repo_file):
+            if repo.url and "psabr.aws.plesk.tech/share/mirror/cloudlinux/7" in repo.url:
+                log.info(f"Plesk base repo found in {repo_file!r} by repository {repo.id!r}")
                 return True
         return False
 
@@ -276,9 +275,9 @@ class AssertPleskRepositoriesNotNoneLink(action.CheckAction):
     def _do_check(self) -> bool:
         none_link_repos = []
         for file in files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*.repo"]):
-            for id, _2, url, metalink, mirrorlist, _5 in rpm.extract_repodata(file):
-                if rpm.repository_has_none_link(id, None, url, metalink, mirrorlist):
-                    none_link_repos.append(f"'{id}' from repofile '{file}'")
+            for repo in rpm.extract_repodata(file):
+                if rpm.repository_has_none_link(repo):
+                    none_link_repos.append(f"{repo.id!r} from repofile {file!r}")
 
         if len(none_link_repos) == 0:
             return True
@@ -296,8 +295,8 @@ class RemoveOldMigratorThirdparty(action.ActiveAction):
 
     def _is_required(self) -> bool:
         for file in self._find_migrator_repo_files():
-            for _1, _2, url, _3, _4, _5 in rpm.extract_repodata(file):
-                if url and "PMM_0.1.10/thirdparty-rpm" in url:
+            for repo in rpm.extract_repodata(file):
+                if repo.url and "PMM_0.1.10/thirdparty-rpm" in repo.url:
                     return True
 
         return False
@@ -307,7 +306,7 @@ class RemoveOldMigratorThirdparty(action.ActiveAction):
             files.backup_file(file)
 
             rpm.remove_repositories(file, [
-                lambda _1, _2, baseurl, _3, _4: (baseurl is not None and "PMM_0.1.10/thirdparty-rpm" in baseurl),
+                lambda repo: (repo.url is not None and "PMM_0.1.10/thirdparty-rpm" in repo.url),
             ])
         return action.ActionResult()
 
@@ -467,7 +466,7 @@ class DisableBaseRepoUpdatesRepository(action.ActiveAction):
     def _post_action(self) -> action.ActionResult:
         if os.path.exists(self.base_repo_path):
             rpm.remove_repositories(self.base_repo_path, [
-                lambda _1, _2, baseurl, _3, _4: baseurl is not None and "mirror.pp.plesk.tech/cloudlinux/7/updates" in baseurl,
+                lambda repo: repo.url is not None and "mirror.pp.plesk.tech/cloudlinux/7/updates" in repo.url,
             ])
         return action.ActionResult()
 
