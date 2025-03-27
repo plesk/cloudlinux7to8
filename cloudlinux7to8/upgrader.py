@@ -179,7 +179,6 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             "Update databases": [
                 custom_actions.UpdateMariadbDatabase(),
                 custom_actions.UpdateModernMariadb(),
-                custom_actions.UpdateGuvernorMariadb(options.state_dir),
                 custom_actions.AddMysqlConnector(),
             ],
             "Repositories handling": [
