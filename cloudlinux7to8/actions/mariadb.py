@@ -35,8 +35,7 @@ def _is_governor_mariadb_installed() -> bool:
     repofiles = _find_mariadb_repo_files()
     for repofile in repofiles:
         for repo in rpm.extract_repodata(repofile):
-            _, _, repo_baseurl, _, _, _ = repo
-            if repo_baseurl and "repo.cloudlinux.com" in repo_baseurl and ("cl-mariadb" in repo_baseurl or "cl-mysql" in repo_baseurl):
+            if repo.url and "repo.cloudlinux.com" in repo.url and ("cl-mariadb" in repo.url or "cl-mysql" in repo.url):
                 return True
 
     return False
@@ -62,15 +61,14 @@ The MariaDB repository with id '{}' from the file '{}' is not accessible.
 
         for repofile in repofiles:
             for repo in rpm.extract_repodata(repofile):
-                repo_id, _, repo_baseurl, _, _, _ = repo
-                if not repo_baseurl or ".mariadb.org" not in repo_baseurl:
+                if not repo.url or ".mariadb.org" not in repo.url:
                     continue
 
                 # Since repository will be deprecated for any distro at once it looks fine to check only for 7 on x86_64
-                repo_baseurl = repo_baseurl.replace("$releasever", "7").replace("$basearch", "x86_64")
+                repo_baseurl = repo.url.replace("$releasever", "7").replace("$basearch", "x86_64")
                 result = subprocess.run(["curl", "-s", "-o", "/dev/null", "-f", repo_baseurl])
                 if result.returncode != 0:
-                    self.description = self.description.format(repo_id, repofile)
+                    self.description = self.description.format(repo.id, repofile)
                     return False
 
         return True
@@ -109,12 +107,12 @@ class UpdateModernMariadb(action.ActiveAction):
         for repofile in repofiles:
             leapp_configs.adopt_repositories(repofile)
 
-        mariadb_repo_id, _1, _2, _3, _4, _5 = [repo for repo in rpm.extract_repodata(repofiles[0])][0]
+        repo = [repo for repo in rpm.extract_repodata(repofiles[0])][0]
 
         packages = ["MariaDB-client", "MariaDB-server"]
-        rpm.install_packages(packages, repository=mariadb_repo_id, simulate=True)
+        rpm.install_packages(packages, repository=repo.id, simulate=True)
         _remove_mariadb_packages()
-        rpm.install_packages(packages, repository=mariadb_repo_id)
+        rpm.install_packages(packages, repository=repo.id)
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
@@ -201,80 +199,6 @@ MySQL installed by Governor is not compatible with the conversion process. To co
 
     def _do_check(self) -> bool:
         return not mariadb.is_mysql_installed() or not _is_governor_mariadb_installed()
-
-
-class UpdateGuvernorMariadb(action.ActiveAction):
-    mariadb_version_file: str
-
-    def __init__(self, temp_directory: str) -> None:
-        self.name = "update modern mariadb installed from governor"
-        self.mariadb_version_file = temp_directory + "/mariadb_version.txt"
-
-    def _is_required(self) -> bool:
-        if not mariadb.is_mariadb_installed() or not _is_governor_mariadb_installed():
-            return False
-        # Actually the version should be checked by the AssertMinGovernorMariadbVersion pre-checker
-        # Therefore, if this execution occurs, we have likely forgotten to include the pre-checker in the process.
-        if mariadb.get_installed_mariadb_version() < FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION:
-            raise Exception(f"The installed version of MariaDB is not compatible with the conversion process. Please use Governor to update MariaDB to version {str(FIRST_SUPPORTED_GOVERNOR_MARIADB_VERSION)!r} or later.")
-
-        return True
-
-    def _prepare_action(self) -> action.ActionResult:
-        repofiles = _find_mariadb_repo_files()
-        if len(repofiles) == 0:
-            raise Exception("Mariadb installed from unknown repository. Please check the '{}' file is present".format("/etc/yum.repos.d/mariadb.repo"))
-
-        log.debug("Add MariaDB repository files '{}' mapping".format(repofiles[0]))
-        leapp_configs.add_repositories_mapping(repofiles)
-
-        # Unfortunately we can't rule source repositories for cl-MariaDB* packages at this point
-        # because they based on dnf modules, which will not be available in scope of leapp script.
-        # So we will have to reinstall packages after conversion process on CloudLinux 8 side.
-
-        # To select the correct dnf module, we need to know the MariaDB version. In some cases, we will not
-        # be able to call `mariadb --version` because the required libraries might not be available on
-        # the Cloudlinux 8 side. Therefore, we need to store the MariaDB version on the CloudLinux 7 side.
-        mariadb_version = mariadb.get_installed_mariadb_version()
-        with open(self.mariadb_version_file, "w") as file:
-            file.write(str(mariadb_version))
-
-        return action.ActionResult()
-
-    def _post_action(self) -> action.ActionResult:
-        repofiles = _find_mariadb_repo_files()
-        if len(repofiles) == 0:
-            return action.ActionResult()
-
-        for repofile in repofiles:
-            leapp_configs.adopt_repositories(repofile)
-
-        mariadb_packages = [pkg[0] for pkg in rpm.get_installed_packages_list("cl-MariaDB*")]
-
-        mariadb_version = None
-        with open(self.mariadb_version_file, "r") as file:
-            mariadb_version = mariadb.MariaDBVersion(file.readline().strip())
-        if not mariadb_version:
-            raise Exception("Unable to determine the MariaDB version. You could inject the version manually into the file '{}'".format(self.mariadb_version_file))
-
-        mariadb_module = f"mariadb:cl-MariaDB{mariadb_version.major}{mariadb_version.minor}"
-        log.debug(f"Going to reinstall following packages with enabled dnf module {mariadb_module!r}: {mariadb_packages}")
-
-        util.logged_check_call(["dnf", "module", "-y", "enable", mariadb_module])
-        rpm.install_packages(mariadb_packages, simulate=True)
-        rpm.remove_packages(rpm.filter_installed_packages(mariadb_packages))
-        rpm.install_packages(mariadb_packages)
-
-        return action.ActionResult()
-
-    def _revert_action(self) -> action.ActionResult:
-        return action.ActionResult()
-
-    def estimate_prepare_time(self) -> int:
-        return 30
-
-    def estimate_post_time(self) -> int:
-        return 60
 
 
 class AddMysqlConnector(action.ActiveAction):
