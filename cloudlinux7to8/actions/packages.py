@@ -4,7 +4,7 @@ import typing
 import shutil
 import re
 
-from pleskdistup.common import action, files, leapp_configs, log, motd, packages, rpm, systemd, util
+from pleskdistup.common import action, files, leapp_configs, log, motd, packages, plesk, rpm, systemd, util
 
 BASE_REPO_PATH = "/etc/yum.repos.d/base.repo"
 
@@ -39,13 +39,12 @@ class RemovingPleskConflictPackages(action.ActiveAction):
         return 10
 
 
-class ReinstallPleskComponents(action.ActiveAction):
+class ReinstallPhpmyadminPleskComponents(action.ActiveAction):
     def __init__(self) -> None:
         self.name = "re-installing plesk components"
 
     def _prepare_action(self) -> action.ActionResult:
         components_pkgs = [
-            "plesk-roundcube",
             "psa-phpmyadmin",
         ]
 
@@ -57,15 +56,16 @@ class ReinstallPleskComponents(action.ActiveAction):
         # will be called. It's because triggers that creates phpmyadmin configuration files
         # expect plesk on board. Hence when we install the package in scope of temporary OS
         # the file can't be created.
-        packages.remove_packages(["psa-phpmyadmin"])
+        phpmyadmin_package_name: str = "psa-phpmyadmin"
+        if packages.is_package_installed(phpmyadmin_package_name):
+            packages.remove_packages([phpmyadmin_package_name])
+
         util.logged_check_call(["/usr/sbin/plesk", "installer", "update"])
 
-        util.logged_check_call(["/usr/sbin/plesk", "installer", "add", "--components", "roundcube"])
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
         util.logged_check_call(["/usr/sbin/plesk", "installer", "update"])
-        util.logged_check_call(["/usr/sbin/plesk", "installer", "add", "--components", "roundcube"])
         systemd.restart_services(["sw-cp-server"])
         return action.ActionResult()
 
@@ -73,10 +73,40 @@ class ReinstallPleskComponents(action.ActiveAction):
         return 10
 
     def estimate_post_time(self) -> int:
-        return 2 * 60
+        return 60
 
     def estimate_revert_time(self) -> int:
-        return 6 * 60
+        return 3 * 60
+
+
+class ReinstallRoundcubePleskComponents(action.ActiveAction):
+    def __init__(self):
+        self.name = "re-installing roundcube plesk components"
+
+    def is_required(self) -> bool:
+        return plesk.is_component_installed("roundcube")
+
+    def _prepare_action(self) -> action.ActionResult:
+        packages.remove_packages(rpm.filter_installed_packages(["plesk-roundcube"]))
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        util.logged_check_call(["/usr/sbin/plesk", "installer", "add", "--components", "roundcube"])
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        util.logged_check_call(["/usr/sbin/plesk", "installer", "add", "--components", "roundcube"])
+        systemd.restart_services(["sw-cp-server"])
+        return action.ActionResult()
+
+    def estimate_prepare_time(self):
+        return 10
+
+    def estimate_post_time(self):
+        return 60
+
+    def estimate_revert_time(self):
+        return 3 * 60
 
 
 class ReinstallConflictPackages(action.ActiveAction):
