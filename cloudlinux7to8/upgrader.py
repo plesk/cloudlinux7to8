@@ -152,6 +152,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.RestoreRoundcubeConfiguration(options.state_dir),
                 custom_actions.RecreateAwstatsConfigurationFiles(),
                 common_actions.UninstallTuxcareEls(),
+                common_actions.PreserveMariadbConfig(),
             ],
             "Handle plesk related services": [
                 common_actions.DisablePleskRelatedServicesDuringUpgrade(),
