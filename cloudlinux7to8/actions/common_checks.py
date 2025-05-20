@@ -24,7 +24,7 @@ class AssertNoMoreThenOneKernelNamedNIC(action.CheckAction):
         self.description = """The system has one or more network interface cards (NICs) using kernel-names (ethX).
 \tLeapp cannot guarantee the interface names' stability during the conversion.
 \tGive those NICs persistent names (enpXsY) to proceed with the conversion.
-\tIntarfeces: {}
+\tInterfaces: {}
 """
 
     def _do_check(self) -> bool:
