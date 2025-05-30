@@ -162,7 +162,6 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             "Handle packages and services": [
                 custom_actions.FixOsVendorPhpFpmConfiguration(),
                 common_actions.RebundleRubyApplications(),
-                custom_actions.RemovingPleskConflictPackages(),
                 custom_actions.ReinstallPhpmyadminPleskComponents(),
                 custom_actions.ReinstallRoundcubePleskComponents(),
                 custom_actions.ReinstallConflictPackages(options.state_dir),
@@ -177,6 +176,9 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             ],
             "First plesk start": [
                 common_actions.StartPleskBasicServices(),
+            ],
+            "Remove conflicting packages": [
+                custom_actions.RemovingPleskConflictPackages(),
             ],
             "Update databases": [
                 custom_actions.UpdateMariadbDatabase(),
