@@ -117,10 +117,10 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                     [
                         "leapp-0.18.0-2.el7",
                         "python2-leapp-0.18.0-2.el7",
-                        "leapp-data-cloudlinux-0.3-5.el7.20240821",
+                        "leapp-data-cloudlinux-0.3-6.el7.20240821",
                         "leapp-deps-0.18.0-2.el7",
-                        "leapp-upgrade-el7toel8-0.20.0-5.el7",
-                        "leapp-upgrade-el7toel8-deps-0.20.0-5.el7",
+                        "leapp-upgrade-el7toel8-0.20.0-6.el7",
+                        "leapp-upgrade-el7toel8-deps-0.20.0-6.el7",
                     ],
                     remove_logs_on_finish=self.remove_leapp_logs
                 ),
