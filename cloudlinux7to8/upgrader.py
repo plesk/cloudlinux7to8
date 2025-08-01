@@ -152,6 +152,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.RecreateAwstatsConfigurationFiles(),
                 common_actions.UninstallTuxcareEls(),
                 common_actions.PreserveMariadbConfig(),
+                common_actions.SubstituteSshPermitRootLoginConfigured(),
             ],
             "Handle plesk related services": [
                 common_actions.DisablePleskRelatedServicesDuringUpgrade(),
@@ -260,6 +261,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.CheckSourcePointsToArchiveURL(),
             common_actions.AssertNoMoreThenOneKernelDevelInstalled(),
             common_actions.AssertEnoughRamForAmavis(CLOUDLINUX8_AMAVIS_REQUIRED_RAM, self.amavis_upgrade_allowed),
+            common_actions.AssertSshPermitRootLoginConfigured(skip_known_substitudes=True),
             common_actions.AssertFstabOrderingIsFine(),
             common_actions.AssertFstabHasDirectRaidDevices(self.allow_raid_devices),
             common_actions.AssertPackageAvailable(
