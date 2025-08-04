@@ -240,7 +240,8 @@ class CloudLinux7to8Upgrader(DistUpgrader):
         checks = [
             common_actions.AssertPleskVersionIsAvailable(),
             common_actions.AssertPleskInstallerNotInProgress(),
-            custom_actions.AssertAvailableSpace(),
+            custom_actions.AssertAvailableSpaceForLocation("/var/lib", 5 * 1024 * 1024 * 1024),  # 5GB required minimum space to store packages
+            custom_actions.AssertAvailableSpaceForLocation("/boot", 100 * 1024 * 1024),  # 100M required minimum space to store bootloader
             common_actions.AssertMinPhpVersionInstalled(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertMinPhpVersionUsedByWebsites(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
             common_actions.AssertMinPhpVersionUsedByCron(FIRST_SUPPORTED_BY_ALMA_8_PHP_VERSION),
