@@ -77,6 +77,8 @@ class CloudLinux7to8Upgrader(DistUpgrader):
         ]
 
         feed.attached_files += [
+            "/etc/fstab",
+            "/etc/grub2.cfg",
             "/etc/leapp/files/repomap.csv",
             "/etc/leapp/files/pes-events.json",
             "/etc/leapp/files/leapp_upgrade_repositories.repo",
@@ -86,7 +88,6 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             "/var/log/leapp/leapp-report.txt",
             "/var/log/leapp/leapp-preupgrade.log",
             "/var/log/leapp/leapp-upgrade.log",
-            "/etc/grub2.cfg",
         ]
 
         for grub_directory in ("/etc/grub.d", "/boot/grub", "/boot/grub2"):
