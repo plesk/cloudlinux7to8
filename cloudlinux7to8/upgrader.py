@@ -266,6 +266,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             common_actions.AssertSshPermitRootLoginConfigured(skip_known_substitudes=True),
             common_actions.AssertFstabOrderingIsFine(),
             common_actions.AssertFstabHasDirectRaidDevices(self.allow_raid_devices),
+            common_actions.AssertFstabHasNoDuplicates(),
             common_actions.AssertPackageAvailable(
                 "dnf",
                 name="asserting dnf package available",
