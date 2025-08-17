@@ -27,6 +27,8 @@ class DoCloudLinux7to8Convert(action.ActiveAction):
 
     def _prepare_action(self) -> action.ActionResult:
         try:
+            util.logged_check_call(["cp", "/etc/resolv.conf", "/etc/leapp/files/resolv.conf"])
+            util.logged_check_call(["/usr/bin/dnf", "clean", "all"])
             util.logged_check_call(["/usr/bin/leapp", "preupgrade"])
         except subprocess.CalledProcessError as e:
             inhibitors = leapp_configs.extract_leapp_report_inhibitors()
