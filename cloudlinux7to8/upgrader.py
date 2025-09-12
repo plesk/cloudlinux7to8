@@ -180,6 +180,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             ],
             "Remove conflicting packages": [
                 custom_actions.RemovingPleskConflictPackages(),
+                custom_actions.RemovePleskOutdatedPackages(),
             ],
             "Update databases": [
                 custom_actions.UpdateMariadbDatabase(),
