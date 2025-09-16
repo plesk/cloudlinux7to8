@@ -276,6 +276,7 @@ class AdoptRepositories(action.ActiveAction):
         self._use_rpmnew_repositories()
         self._adopt_plesk_repositories()
         self._adopt_base_repository()
+        util.logged_check_call(["/usr/bin/dnf", "clean", "all"])
         util.logged_check_call(["/usr/bin/dnf", "-y", "update", "--disablerepo=cloudlinux-elevate"])
         return action.ActionResult()
 
