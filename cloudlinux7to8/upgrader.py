@@ -154,6 +154,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.UninstallTuxcareEls(),
                 common_actions.PreserveMariadbConfig(),
                 common_actions.SubstituteSshPermitRootLoginConfigured(),
+                custom_actions.UseSystemResolveForLeappContainer(),
             ],
             "Handle plesk related services": [
                 common_actions.DisablePleskRelatedServicesDuringUpgrade(),

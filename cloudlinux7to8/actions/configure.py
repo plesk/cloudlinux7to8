@@ -1,6 +1,7 @@
 # Copyright 2025. WebPros International GmbH. All rights reserved.
 
 import os
+import shutil
 import typing
 
 from pleskdistup.common import action, leapp_configs, files
@@ -120,6 +121,28 @@ class PatchLeappDebugNonAsciiPackager(action.ActiveAction):
         # so sometimes we could have non-ascii packager name, in this case leapp will fail
         # on printing debug message. So we need to encode it to utf-8 before print (and only before print I think)
         files.replace_string(self.path_to_src, ", pkg.packager", ", pkg.packager.encode('utf-8')")
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        return action.ActionResult()
+
+
+class UseSystemResolveForLeappContainer(action.ActiveAction):
+    path_to_src: str
+
+    def __init__(self) -> None:
+        self.name = "configure leapp container to use host's /etc/resolv.conf"
+        self.path_to_resolve = "/etc/resolv.conf"
+        self.path_to_src = "/etc/leapp/files/resolv.conf"
+
+    def is_required(self) -> bool:
+        return os.path.exists(self.path_to_resolve)
+
+    def _prepare_action(self) -> action.ActionResult:
+        shutil.copy(self.path_to_resolve, self.path_to_src)
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
