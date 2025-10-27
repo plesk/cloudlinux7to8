@@ -176,8 +176,10 @@ class AssertMinGovernorMariadbVersion(action.CheckAction):
     def __init__(self, version: mariadb.MariaDBVersion) -> None:
         self.name = "check minimum guvernor mariadb version"
         self.minimal_version = version
-        self.description = f"""
-The installed version of MariaDB is incompatible with the conversion process. To proceed, update MariaDB using Governor to version {str(self.minimal_version)!r} or later.
+        self.description = f"""The installed version of MariaDB is incompatible with the conversion process. To proceed, update MariaDB using Governor to version {str(self.minimal_version)!r} or later.
+\tBefore running the commands below, make sure to back up your databases:
+\t- `/usr/share/lve/dbgovernor/mysqlgovernor.py --mysql-version=mariadb{self.minimal_version.major}{self.minimal_version.minor}`
+\t- `/usr/share/lve/dbgovernor/mysqlgovernor.py --install`
 """
 
     def _do_check(self) -> bool:
@@ -193,8 +195,10 @@ class AssertGovernorMysqlNotInstalled(action.CheckAction):
     def __init__(self, version: mariadb.MariaDBVersion) -> None:
         self.name = "check minimum governor mariadb version"
         self.minimal_version = version
-        self.description = f"""
-MySQL installed by Governor is not compatible with the conversion process. To continue, use Governor to update MariaDB to at least version {str(self.minimal_version)!r}.
+        self.description = f"""MySQL installed by Governor is not compatible with the conversion process. To continue, use Governor to update MariaDB to at least version {str(self.minimal_version)!r}.
+\tBefore running the commands below, make sure to back up your databases:
+\t- `/usr/share/lve/dbgovernor/mysqlgovernor.py --mysql-version=mariadb{self.minimal_version.major}{self.minimal_version.minor}`
+\t- `/usr/share/lve/dbgovernor/mysqlgovernor.py --install`
 """
 
     def _do_check(self) -> bool:
