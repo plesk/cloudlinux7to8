@@ -175,6 +175,14 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.RestoreMissingNginx(),
                 common_actions.ReinstallAmavisAntivirus(),
                 custom_actions.HandleInternetxRepository(),
+                # We need to remove the python3-ethtool package because it causes issues on
+                # CloudLinux 8 systems when multiple network interfaces are present.
+                # This issue can block license activation, so we prefer to remove the package
+                # to ensure the license remains valid after the conversion.
+                common_actions.RemovePackagesOnFinish(
+                    ["python3-ethtool"],
+                    name="removing python3-ethtool package"
+                ),
             ],
             "First plesk start": [
                 common_actions.StartPleskBasicServices(),
