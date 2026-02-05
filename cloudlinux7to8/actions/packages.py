@@ -6,7 +6,7 @@ import re
 
 from pleskdistup.common import action, files, leapp_configs, log, motd, packages, plesk, rpm, systemd, util
 
-BASE_REPO_PATH = "/etc/yum.repos.d/base.repo"
+BASE_REPO_PATHS = ["/etc/yum.repos.d/base.repo", "/etc/yum.repos.d/cloudlinux-base.repo"]
 
 
 class RemovingPleskConflictPackages(action.ActiveAction):
@@ -269,8 +269,9 @@ class AdoptRepositories(action.ActiveAction):
             leapp_configs.adopt_repositories(file)
 
     def _adopt_base_repository(self) -> None:
-        if os.path.exists(BASE_REPO_PATH):
-            leapp_configs.adopt_repositories(BASE_REPO_PATH)
+        for path in BASE_REPO_PATHS:
+            if os.path.exists(path):
+                leapp_configs.adopt_repositories(path)
 
     def _post_action(self) -> action.ActionResult:
         self._use_rpmnew_repositories()
@@ -290,13 +291,13 @@ class AdoptRepositories(action.ActiveAction):
 class RemovePleskBaseRepository(action.ActiveAction):
     # In some cases we have plesk specific base repository, which will not be
     # fixed by the leapp converter. So we have to remove it manually.
-    base_repo_path: str = BASE_REPO_PATH
+    base_repo_paths: typing.List[str] = BASE_REPO_PATHS
 
     def __init__(self) -> None:
         self.name = "removing base repository"
 
     def _is_required(self) -> bool:
-        return os.path.exists(self.base_repo_path)
+        return any(os.path.exists(path) for path in self.base_repo_paths)
 
     def _prepare_action(self) -> action.ActionResult:
         return action.ActionResult()
@@ -309,12 +310,10 @@ class RemovePleskBaseRepository(action.ActiveAction):
         return False
 
     def _post_action(self) -> action.ActionResult:
-        if os.path.exists(self.base_repo_path):
-            if self._is_plesk_base(self.base_repo_path):
-                files.backup_file(self.base_repo_path)
-                os.unlink(self.base_repo_path)
-                return action.ActionResult()
-
+        for path in self.base_repo_paths:
+            if os.path.exists(path) and self._is_plesk_base(path):
+                files.backup_file(path)
+                os.unlink(path)
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
@@ -511,7 +510,7 @@ class HandleInternetxRepository(action.ActiveAction):
 
 
 class DisableBaseRepoUpdatesRepository(action.ActiveAction):
-    base_repo_path: str = BASE_REPO_PATH
+    base_repo_paths: list = BASE_REPO_PATHS
 
     def __init__(self) -> None:
         self.name = "disabling updates repository"
@@ -520,10 +519,11 @@ class DisableBaseRepoUpdatesRepository(action.ActiveAction):
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
-        if os.path.exists(self.base_repo_path):
-            rpm.remove_repositories(self.base_repo_path, [
-                lambda repo: repo.url is not None and "mirror.pp.plesk.tech/cloudlinux/7/updates" in repo.url,
-            ])
+        for path in self.base_repo_paths:
+            if os.path.exists(path):
+                rpm.remove_repositories(path, [
+                    lambda repo: repo.url is not None and "mirror.pp.plesk.tech/cloudlinux/7/updates" in repo.url,
+                ])
         return action.ActionResult()
 
     def _revert_action(self) -> action.ActionResult:
