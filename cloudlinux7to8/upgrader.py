@@ -141,6 +141,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.LeappReposConfiguration(),
                 custom_actions.LeappChoicesConfiguration(),
                 custom_actions.AdoptKolabRepositories(),
+                custom_actions.AdoptSOGo(),
                 custom_actions.AdoptAtomicRepositories(),
                 custom_actions.PatchDnfpluginErrorOutput(),
                 custom_actions.PatchLeappDebugNonAsciiPackager(),

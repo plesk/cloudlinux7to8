@@ -3,7 +3,7 @@
 import typing
 
 from pleskdistup import actions as common_actions
-from pleskdistup.common import action, util, leapp_configs, files
+from pleskdistup.common import action, files, leapp_configs, packages, systemd, util
 
 
 class FixupImunify(action.ActiveAction):
@@ -85,3 +85,43 @@ class FetchPleskGPGKey(common_actions.FetchGPGKeyForLeapp):
         self.name = "fetching Plesk GPG key"
         self.target_repository_files_regex = ["plesk*.repo"]
         super().__init__()
+
+
+class AdoptSOGo(action.ActiveAction):
+    def __init__(self):
+        self.name = "adopting SOGo extension"
+        self.sogo_config = "/etc/sogo/sogo.conf"
+        self.sogo_repo_file = "/etc/yum.repos.d/plesk-ext-sogo.repo"
+
+    def _is_required(self) -> bool:
+        return packages.is_package_installed("sogo")
+
+    def _prepare_action(self) -> action.ActionResult:
+        files.backup_file(self.sogo_config)
+        return action.ActionResult()
+
+    def fix_permissions(self) -> None:
+        target_dirs = ["/run/sogo", "/var/lib/sogo/", "/var/log/sogo/", "/var/spool/sogo/", "/etc/sogo/"]
+        for target_dir in target_dirs:
+            files.change_directory_ownership(target_dir, "sogo", "sogo", recursive=True)
+        files.change_file_ownership(self.sogo_config, "sogo", "sogo")
+
+    def _post_action(self) -> action.ActionResult:
+        # This temporarily replaces systemctl with a no-op stub, allowing
+        # post-install scripts to run without disrupting the conversion service
+        # by calling the systemd daemon-reload operation.
+        with systemd.systemctl_stub():
+            packages.install_packages(["sogo", "sogo-tool"])
+
+        files.restore_file_from_backup(self.sogo_config)
+        self.fix_permissions()
+
+        systemd.enable_services(["sogod"])
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        files.restore_file_from_backup(self.sogo_config)
+        return action.ActionResult()
+
+    def estimate_post_time(self) -> int:
+        return 1 * 60
