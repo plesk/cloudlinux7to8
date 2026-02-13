@@ -126,6 +126,12 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                     remove_logs_on_finish=self.remove_leapp_logs
                 ),
             ],
+            "Prepare finihsing systemd service": [
+                common_actions.AddUpgradeSystemdService(
+                    os.path.abspath(upgrader_bin_path),
+                    options,
+                ),
+            ],
             "Prepare configurations": [
                 common_actions.RevertChangesInGrub(),
                 custom_actions.PrepareLeappConfigurationBackup(),
@@ -138,10 +144,6 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.AdoptAtomicRepositories(),
                 custom_actions.PatchDnfpluginErrorOutput(),
                 custom_actions.PatchLeappDebugNonAsciiPackager(),
-                common_actions.AddUpgradeSystemdService(
-                    os.path.abspath(upgrader_bin_path),
-                    options,
-                ),
                 common_actions.UpdatePlesk(),
                 custom_actions.PostgresReinstallModernPackage(),
                 custom_actions.FixNamedConfig(),
