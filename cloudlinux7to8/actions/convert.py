@@ -1,4 +1,4 @@
-# Copyright 2025. WebPros International GmbH. All rights reserved.
+# Copyright 1999 - 2026. WebPros International GmbH. All rights reserved.
 import os
 from pleskdistup.common import action, leapp_configs, systemd, util
 
