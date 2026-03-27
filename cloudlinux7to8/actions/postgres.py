@@ -140,7 +140,7 @@ class PostgresReinstallModernPackage(action.ActiveAction):
         return f'postgresql-{major_version}'
 
     def _prepare_action(self) -> action.ActionResult:
-        leapp_configs.add_repositories_mapping(["/etc/yum.repos.d/pgdg-redhat-all.repo"])
+        leapp_configs.add_repositories_mapping(["/etc/yum.repos.d/pgdg-redhat-all.repo"], skip_disabled=True)
 
         for major_version in self._get_versions():
             service_name = self._get_service_name(major_version)
@@ -156,11 +156,11 @@ class PostgresReinstallModernPackage(action.ActiveAction):
         for major_version in self._get_versions():
             if major_version > _ALMA8_POSTGRES_VERSION:
                 util.logged_check_call(['/usr/bin/dnf', '-q', '-y', 'module', 'disable', 'postgresql'])
-                util.logged_check_call(['/usr/bin/dnf', 'update'])
+                util.logged_check_call(['/usr/bin/dnf', '-y', 'update'])
                 util.logged_check_call(['/usr/bin/dnf', 'install', '-y', f'postgresql{major_version}', f'postgresql{major_version}-server'])
             else:
                 util.logged_check_call(['/usr/bin/dnf', '-q', '-y', 'module', 'enable', 'postgresql'])
-                util.logged_check_call(['/usr/bin/dnf', 'update'])
+                util.logged_check_call(['/usr/bin/dnf', '-y', 'update'])
                 util.logged_check_call(['/usr/bin/dnf', 'install', '-y', 'postgresql', 'postgresql-server'])
 
             if os.path.exists(self._get_version_enabled_path(major_version)):
