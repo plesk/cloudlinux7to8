@@ -22,7 +22,7 @@ class LeappPreupgradeRisksPreventedException(Exception):
         return f"{super().__str__()}\n{original_exception_str}The preventing factors are:\n{inhibitors_str}"
 
 
-class DoCloudLinux7to8Convert(action.ActiveAction):
+class DoAlmaLinux8to9Convert(action.ActiveAction):
     LEAPP_RESUME_SERVICE = "leapp_resume.service"
 
     def __init__(self):
@@ -39,7 +39,7 @@ class DoCloudLinux7to8Convert(action.ActiveAction):
             else:
                 raise e
 
-        util.logged_check_call(["/usr/bin/leapp", "upgrade", "--nowarn"])
+        util.logged_check_call(["/usr/bin/leapp", "upgrade"]) # "--debug"
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:

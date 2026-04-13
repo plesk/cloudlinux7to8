@@ -4,7 +4,8 @@ import os
 import shutil
 import typing
 
-from pleskdistup.common import action, leapp_configs, files
+from pleskdistup.common import action, leapp_configs, files, rpm
+from .common import get_adapted_repository
 
 
 class PrepareLeappConfigurationBackup(action.ActiveAction):
@@ -14,6 +15,7 @@ class PrepareLeappConfigurationBackup(action.ActiveAction):
         self.name = "prepare leapp configuration backup"
         self.leapp_configs = ["/etc/leapp/files/leapp_upgrade_repositories.repo",
                               "/etc/leapp/files/repomap.csv",
+                              "/etc/leapp/files/repomap.json",
                               "/etc/leapp/files/pes-events.json"]
 
     def _prepare_action(self) -> action.ActionResult:
@@ -38,6 +40,59 @@ class PrepareLeappConfigurationBackup(action.ActiveAction):
         return action.ActionResult()
 
 
+class PleskMainRepoTemporary(action.ActiveAction):
+
+    def __init__(self) -> None:
+        self.name = "temporarily create Plesk main repository"
+        self.repo_filepath = "/etc/yum.repos.d/plesk-convert_tmp.repo"
+
+    def _create_temporary_plesk_repo(self, repofiles: typing.List[str],
+                                     repo_filepath: str) -> None:
+        with open(repo_filepath, 'w') as repo_file:
+            repo_file.write("# Automatically generated (temporary) by Plesk distribution upgrade script\n")
+            for file in repofiles:
+                if not os.path.exists(file):
+                    continue
+
+                for repo in rpm.extract_repodata(file):
+                    if repo.enabled == "0":
+                        continue
+                    if repo.id is None or repo.name is None or repo.url is None \
+                            or not repo.id.startswith("PLESK_18_0") \
+                            or "extras" not in repo.id:
+                        continue
+
+                    dist_repo = rpm.Repository(
+                        repo.id.replace("-extras", ""),
+                        name=repo.name.replace("extras", ""),
+                        url=repo.url.replace("extras", "dist"),
+                        metalink=None,
+                        mirrorlist=None,
+                        enabled="1\n",
+                        gpgcheck="1\n",
+                    )
+                    repo_file.write(repr(dist_repo))
+                    return
+
+    def _is_required(self) -> bool:
+        return True
+
+    def _prepare_action(self) -> action.ActionResult:
+        repofiles = files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*.repo"])
+        self._create_temporary_plesk_repo(repofiles, self.repo_filepath)
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        if os.path.exists(self.repo_filepath):
+            os.unlink(self.repo_filepath)
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        if os.path.exists(self.repo_filepath):
+            os.unlink(self.repo_filepath)
+        return action.ActionResult()
+
+
 class LeappReposConfiguration(action.ActiveAction):
 
     def __init__(self) -> None:
@@ -47,8 +102,12 @@ class LeappReposConfiguration(action.ActiveAction):
         repofiles = files.find_files_case_insensitive("/etc/yum.repos.d", ["plesk*.repo", "epel.repo"])
 
         leapp_configs.add_repositories_mapping(repofiles, ignore=[
-            "PLESK_17_PHP52", "PLESK_17_PHP53", "PLESK_17_PHP54", "PLESK_17_PHP55",
-        ])
+            "PLESK_17_PHP52", "PLESK_17_PHP53", "PLESK_17_PHP54", "PLESK_17_PHP55"],
+                                               do_adapt_repository=get_adapted_repository,
+                                               mapjson_path=leapp_configs.LEAPP_MAP_JSON_PATH,
+                                               distro="almalinux",
+                                               source_major_version="8",
+                                               target_major_version="9")
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:

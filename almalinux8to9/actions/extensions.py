@@ -3,7 +3,8 @@
 import typing
 
 from pleskdistup import actions as common_actions
-from pleskdistup.common import action, files, leapp_configs, packages, systemd, util
+from pleskdistup.common import action, util, leapp_configs, files
+from .common import get_adapted_repository
 
 
 class FixupImunify(action.ActiveAction):
@@ -19,7 +20,12 @@ class FixupImunify(action.ActiveAction):
     def _prepare_action(self) -> action.ActionResult:
         repofiles = self._find_imunify_repo_files()
 
-        leapp_configs.add_repositories_mapping(repofiles)
+        leapp_configs.add_repositories_mapping(repofiles,
+                                               do_adapt_repository=get_adapted_repository,
+                                               mapjson_path=leapp_configs.LEAPP_MAP_JSON_PATH,
+                                               distro="almalinux",
+                                               source_major_version="8",
+                                               target_major_version="9")
 
         # For some reason leapp replaces the libssh2 package on installation. It's fine in most cases,
         # but imunify packages require libssh2. So we should use PRESENT action to keep it.
@@ -52,13 +58,18 @@ class AdoptKolabRepositories(action.ActiveAction):
                 "kolab-16-source",
                 "kolab-16-testing-source",
                 "kolab-16-testing-candidate-source",
-            ]
+            ],
+            do_adapt_repository=get_adapted_repository,
+            mapjson_path=leapp_configs.LEAPP_MAP_JSON_PATH,
+            distro="almalinux",
+            source_major_version="8",
+            target_major_version="9",
         )
         return action.ActionResult()
 
     def _post_action(self) -> action.ActionResult:
         for file in self._find_kolab_repo_files():
-            leapp_configs.adopt_repositories(file)
+            leapp_configs.adopt_repositories(file, do_adapt_repository=get_adapted_repository)
 
         util.logged_check_call(["/usr/bin/dnf", "-y", "update"])
         return action.ActionResult()

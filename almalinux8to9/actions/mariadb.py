@@ -5,6 +5,7 @@ import typing
 import os
 
 from pleskdistup.common import action, leapp_configs, files, log, mariadb, rpm, util
+from .common import get_adapted_repository
 
 
 MARIADB_VERSION_ON_ALMA = mariadb.MariaDBVersion("10.3.39")
@@ -35,7 +36,7 @@ def _is_governor_mariadb_installed() -> bool:
     repofiles = _find_mariadb_repo_files()
     for repofile in repofiles:
         for repo in rpm.extract_repodata(repofile):
-            if repo.url and "repo.cloudlinux.com" in repo.url and ("cl-mariadb" in repo.url or "cl-mysql" in repo.url):
+            if repo.url and "repo.almalinux.com" in repo.url and ("cl-mariadb" in repo.url or "cl-mysql" in repo.url):
                 return True
 
     return False
@@ -91,7 +92,13 @@ class UpdateModernMariadb(action.ActiveAction):
             raise Exception("Mariadb installed from unknown repository. Please check the '{}' file is present".format("/etc/yum.repos.d/mariadb.repo"))
 
         log.debug("Add MariaDB repository files '{}' mapping".format(repofiles[0]))
-        leapp_configs.add_repositories_mapping(repofiles)
+        leapp_configs.add_repositories_mapping(repofiles,
+                                               ignore=[],
+                                               do_adapt_repository=get_adapted_repository,
+                                               mapjson_path=leapp_configs.LEAPP_MAP_JSON_PATH,
+                                               distro="almalinux",
+                                               source_major_version="8",
+                                               target_major_version="9")
 
         log.debug("Set repository mapping in the leapp configuration file")
         leapp_configs.set_package_repository("mariadb", "alma-mariadb")
@@ -105,7 +112,7 @@ class UpdateModernMariadb(action.ActiveAction):
             return action.ActionResult()
 
         for repofile in repofiles:
-            leapp_configs.adopt_repositories(repofile)
+            leapp_configs.adopt_repositories(repofile, do_adapt_repository=get_adapted_repository)
 
         repo = [repo for repo in rpm.extract_repodata(repofiles[0])][0]
 
@@ -152,9 +159,11 @@ class UpdateMariadbDatabase(action.ActiveAction):
         # We should be sure mariadb is started, otherwise restore wouldn't work
         util.logged_check_call(["/usr/bin/systemctl", "start", "mariadb"])
 
-        with open('/etc/psa/.psa.shadow', 'r') as shadowfile:
-            shadowdata = shadowfile.readline().rstrip()
-            util.logged_check_call(["/usr/bin/mysql_upgrade", "-uadmin", "-p" + shadowdata])
+        # it could be missing due to implicit/automatic conversion support
+        if os.path.isfile("/usr/bin/mysql_upgrade"):
+            with open('/etc/psa/.psa.shadow', 'r') as shadowfile:
+                shadowdata = shadowfile.readline().rstrip()
+                util.logged_check_call(["/usr/bin/mysql_upgrade", "-uadmin", "-p" + shadowdata])
         # Also find a way to drop cookies, because it will ruin your day
         # We have to delete it once again, because leapp going to install it in scope of conversion process,
         # but without right configs
@@ -228,7 +237,7 @@ class ReinstallMariadbConflictPackages(action.ActiveAction):
     ReinstallMariadbConflictPackages is an action class that handles the removal and reinstallation
     of conflicting MariaDB packages during a system upgrade.
 
-    Some packages are unavailable from the Cloudlinux mariadb repository, so we must remove them before conversion.
+    Some packages are unavailable from the AlmaLinux mariadb repository, so we must remove them before conversion.
     However, we also need to avoid installing their analogues at the finishing stage.
     This is why we have separated this action from the ReinstallConflictPackages.
 
@@ -256,7 +265,7 @@ class ReinstallMariadbConflictPackages(action.ActiveAction):
 
     def __init__(self, temp_directory: str) -> None:
         self.name = "reinstall mariadb conflict packages"
-        self.removed_packages_file = temp_directory + "/cloudlinux7to8_removed_mariadb_packages.txt"
+        self.removed_packages_file = temp_directory + "/almalinux8to9_removed_mariadb_packages.txt"
         self.conflict_pkgs_map = {
             "galera": "galera",
         }

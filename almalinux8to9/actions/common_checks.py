@@ -1,4 +1,4 @@
-# Copyright 2025. WebPros International GmbH. All rights reserved.
+# Copyright 2026. WebPros International GmbH. All rights reserved.
 
 import collections
 import os
@@ -9,13 +9,13 @@ import typing
 from pleskdistup.common import action, dist, files, log, version
 
 
-class AssertDistroIsCloudLinux8(action.CheckAction):
+class AssertDistroIsAlmaLinux9(action.CheckAction):
     def __init__(self) -> None:
-        self.name = "checking if distro is CloudLinux 8"
-        self.description = "You are running a distribution other than CloudLinux 8. The finalization stage can only be started on CloudLinux 8."
+        self.name = "checking if distro is AlmaLinux 9"
+        self.description = "You are running a distribution other than AlmaLinux 9. The finalization stage can only be started on AlmaLinux 9."
 
     def _do_check(self) -> bool:
-        return dist.get_distro() == dist.CloudLinux("8")
+        return dist.get_distro() == dist.AlmaLinux("9")
 
 
 class AssertNoMoreThenOneKernelNamedNIC(action.CheckAction):
@@ -83,7 +83,7 @@ class AssertRedHatKernelInstalled(action.CheckAction):
 \tTo proceed with the conversion, install a kernel by running:
 \t- 'yum install kernel kernel-tools kernel-tools-libs'
 \tAfter installing the kernel fix the grub configuration by calling:
-\t- `grub2-set-default 'CentOS Linux (newly_installed_kernel_version) 7 (Core)'`
+\t- `grub2-set-default 'AlmaLinux (newly_installed_kernel_version) 8 (Core)'`
 \t- `grub2-mkconfig -o /boot/grub2/grub.cfg`
 \t- `reboot`
 """
