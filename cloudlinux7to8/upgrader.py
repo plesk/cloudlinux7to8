@@ -267,6 +267,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.AssertLocalRepositoryNotPresent(),
             custom_actions.AssertNoRepositoryDuplicates(),
             custom_actions.AssertMariadbRepoAvailable(),
+            custom_actions.AssertModernPostgresRepositoryFilePresent(),
             common_actions.AssertNotInContainer(),
             custom_actions.AssertPackagesUpToDate(),
             custom_actions.AssertNoOutdatedLetsEncryptExtRepository(),
