@@ -39,6 +39,130 @@ class RemovingPleskConflictPackages(action.ActiveAction):
         return 10
 
 
+class RemoveClnClientPackages(action.ActiveAction):
+    """Remove the CLN client stack when CLN is not the channel serving packages.
+
+    ``cloudlinux-release`` 8.10-15 and newer declare ``Conflicts: rhn-client-tools < 2.11.5``,
+    and the only el8 build satisfying that bound ships inside the ``satellite-5-client``
+    module. leapp enables that module only *after* it localinstalls the release package into
+    the target userspace, so the conflict is unsolvable at that point and
+    ``leapp preupgrade`` dies in ``target_userspace_creator``.
+
+    Dropping the stack beforehand sidesteps the conflict, but only when CLN is not the
+    active package channel — on a system where it is, removing these packages would destroy
+    the package source the upgrade itself depends on. Hence the
+    ``_is_cln_package_channel_active()`` guard.
+    """
+
+    SYSTEMID_PATH = "/etc/sysconfig/rhn/systemid"
+    # Packages shipping the spacewalk-protocol DNF/YUM plugin. If none of them is installed
+    # the plugin cannot run, no matter what config files happen to be lying around.
+    # Except the case plugin was installed not by package, but the case seems too narrow
+    SPACEWALK_PLUGIN_PACKAGES = [
+        "dnf-plugin-spacewalk",
+        "python3-dnf-plugin-spacewalk",
+        "yum-rhn-plugin",
+    ]
+    SPACEWALK_CONFIG_PATHS = [
+        "/etc/dnf/plugins/spacewalk.conf",
+        "/etc/yum/pluginconf.d/spacewalk.conf",
+    ]
+
+    removed_packages_file: str
+    cln_client_pkgs: typing.List[str]
+
+    def __init__(self, temp_directory: str) -> None:
+        self.name = "removing unused CLN client packages"
+        self.removed_packages_file = temp_directory + "/cloudlinux7to8_removed_cln_packages.txt"
+        self.cln_client_pkgs = [
+            "rhn-client-tools",
+            "rhn-check",
+            "rhn-setup",
+        ]
+
+    @staticmethod
+    def _is_spacewalk_plugin_explicitly_disabled(config_path: str) -> bool:
+        try:
+            with open(config_path) as f:
+                for line in f:
+                    stripped = line.strip().lower()
+                    if not stripped or stripped.startswith("#") or stripped.startswith("["):
+                        continue
+                    if stripped.startswith("enabled") and "=" in stripped:
+                        return stripped.split("=", 1)[1].strip() == "0"
+        except (OSError, IOError):
+            pass
+        return False
+
+    def _is_cln_package_channel_active(self) -> bool:
+        """Return True when CLN is the channel actually serving packages to this system.
+
+        Deliberately mirrors `is_cln_package_channel_active()` from cloudlinux leapp.
+        """
+        if not os.path.exists(self.SYSTEMID_PATH):
+            return False
+
+        if not rpm.filter_installed_packages(self.SPACEWALK_PLUGIN_PACKAGES):
+            return False
+
+        existing_configs = [path for path in self.SPACEWALK_CONFIG_PATHS if os.path.exists(path)]
+        if not existing_configs:
+            return False
+
+        return not any(self._is_spacewalk_plugin_explicitly_disabled(path) for path in existing_configs)
+
+    def _is_required(self) -> bool:
+        if self._is_cln_package_channel_active():
+            return False
+
+        return len(rpm.filter_installed_packages(self.cln_client_pkgs)) > 0
+
+    def _prepare_action(self) -> action.ActionResult:
+        packages_to_remove = rpm.filter_installed_packages(self.cln_client_pkgs)
+        removed_packages = list(packages_to_remove)
+        rpm.remove_packages(packages_to_remove)
+
+        # We need to re-install packages on revert, so we have to save it
+        with open(self.removed_packages_file, "a") as f:
+            f.write("\n".join(removed_packages) + "\n")
+
+        return action.ActionResult()
+
+    def _post_action(self) -> action.ActionResult:
+        # Nothing to restore. CloudLinux 8 keeps CLN registration but serves packages from
+        # the no-auth (SWNG) repositories, and rhn-client-tools >= 3.0.1 disables the
+        # spacewalk plugin to enforce that. If anything on the target system still needs the
+        # stack it arrives as an ordinary dependency of the upgrade transaction.
+        if os.path.exists(self.removed_packages_file):
+            os.unlink(self.removed_packages_file)
+
+        return action.ActionResult()
+
+    def _revert_action(self) -> action.ActionResult:
+        if not os.path.exists(self.removed_packages_file):
+            log.warn(
+                "File with the list of removed CLN client packages does not exist, "
+                "while the action itself was not skipped. Skip reinstalling packages."
+            )
+            return action.ActionResult()
+
+        # Reinstall only what we actually removed, so hosts that never carried part of the
+        # stack don't gain it on revert.
+        with open(self.removed_packages_file, "r") as f:
+            packages_to_install = sorted({line.strip() for line in f if line.strip()})
+
+        rpm.install_packages(packages_to_install)
+
+        os.unlink(self.removed_packages_file)
+        return action.ActionResult()
+
+    def estimate_prepare_time(self) -> int:
+        return 2
+
+    def estimate_revert_time(self) -> int:
+        return 10
+
+
 class RemovePleskOutdatedPackages(action.ActiveAction):
     outdated_pkgs: typing.List[str]
 
