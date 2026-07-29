@@ -20,6 +20,8 @@ class CloudLinux7to8Upgrader(DistUpgrader):
 
     _pre_reboot_delay = 45
 
+    _leapp_cloudlinux_rpm_url: str = "https://repo.cloudlinux.com/elevate/elevate-release-latest-el7.noarch.rpm"
+
     def __init__(self):
         super().__init__()
 
@@ -113,8 +115,8 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.AddInProgressSshLoginMessage(new_os),
             ],
             "Leapp installation": [
-                custom_actions.LeappInstallation(
-                    custom_actions.LEAPP_CLOUDLINUX_RPM_URL,
+                common_actions.LeappInstallation(
+                    self._leapp_cloudlinux_rpm_url,
                     [
                         "leapp-0.18.0-2.el7",
                         "python2-leapp-0.18.0-2.el7",
@@ -123,6 +125,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                         "leapp-upgrade-el7toel8-0.20.0-7.el7",
                         "leapp-upgrade-el7toel8-deps-0.20.0-7.el7",
                     ],
+                    elevate_repo_id="cloudlinux-elevate",
                     remove_logs_on_finish=self.remove_leapp_logs
                 ),
             ],
