@@ -120,10 +120,10 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                     [
                         "leapp-0.18.0-2.el7",
                         "python2-leapp-0.18.0-2.el7",
-                        "leapp-data-cloudlinux-0.3-8.el7.20240821",
+                        "leapp-data-cloudlinux-0.3-9.el7.20240821",
                         "leapp-deps-0.18.0-2.el7",
-                        "leapp-upgrade-el7toel8-0.20.0-7.el7",
-                        "leapp-upgrade-el7toel8-deps-0.20.0-7.el7",
+                        "leapp-upgrade-el7toel8-0.20.0-9.el7",
+                        "leapp-upgrade-el7toel8-deps-0.20.0-9.el7",
                     ],
                     elevate_repo_id="cloudlinux-elevate",
                     remove_logs_on_finish=self.remove_leapp_logs
@@ -156,7 +156,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.SetMinDovecotDhParamSize(dhparam_size=2048),
                 common_actions.RestoreDovecotConfiguration(options.state_dir),
                 common_actions.RestoreRoundcubeConfiguration(options.state_dir),
-                custom_actions.RecreateAwstatsConfigurationFiles(),
+                common_actions.RecreateAwstatsConfigurationFiles(),
                 common_actions.UninstallTuxcareEls(),
                 common_actions.PreserveMariadbConfig(),
                 common_actions.SubstituteSshPermitRootLoginConfigured(),
@@ -195,6 +195,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             ],
             "Remove conflicting packages": [
                 custom_actions.RemovingPleskConflictPackages(),
+                custom_actions.RemoveClnClientPackages(options.state_dir),
                 custom_actions.RemovePleskOutdatedPackages(),
             ],
             "Update databases": [
