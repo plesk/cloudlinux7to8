@@ -145,39 +145,3 @@ class FixSyslogLogrotateConfig(action.ActiveAction):
 
     def _revert_action(self) -> action.ActionResult:
         return action.ActionResult()
-
-
-class RecreateAwstatsConfigurationFiles(action.ActiveAction):
-    def __init__(self) -> None:
-        self.name = "recreate AWStats configuration files for domains"
-
-    def get_awstats_domains(self) -> typing.Set[str]:
-        domains_awstats_directory = "/usr/local/psa/etc/awstats/"
-        domains = set()
-        for awstats_config_file in os.listdir(domains_awstats_directory):
-            if awstats_config_file.startswith("awstats.") and awstats_config_file.endswith("-http.conf"):
-                domains.add(awstats_config_file.split("awstats.")[-1].rsplit("-http.conf")[0])
-        return domains
-
-    def _prepare_action(self) -> action.ActionResult:
-        return action.ActionResult()
-
-    def _post_action(self) -> action.ActionResult:
-        rpm.handle_all_rpmnew_files("/etc/awstats")
-
-        for domain in self.get_awstats_domains():
-            log.info(f"Recreating AWStats configuration for domain: {domain}")
-            util.logged_check_call(
-                [
-                    "/usr/sbin/plesk", "sbin", "webstatmng", "--set-configs",
-                    "--stat-prog", "awstats", "--domain-name", domain
-                ], stdin=subprocess.DEVNULL
-            )
-        return action.ActionResult()
-
-    def _revert_action(self) -> action.ActionResult:
-        return action.ActionResult()
-
-    def estimate_post_time(self) -> int:
-        # Estimate 100 ms per configuration we have to recreate
-        return int(len(self.get_awstats_domains()) / 10) + 5

@@ -156,7 +156,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 common_actions.SetMinDovecotDhParamSize(dhparam_size=2048),
                 common_actions.RestoreDovecotConfiguration(options.state_dir),
                 common_actions.RestoreRoundcubeConfiguration(options.state_dir),
-                custom_actions.RecreateAwstatsConfigurationFiles(),
+                common_actions.RecreateAwstatsConfigurationFiles(),
                 common_actions.UninstallTuxcareEls(),
                 common_actions.PreserveMariadbConfig(),
                 common_actions.SubstituteSshPermitRootLoginConfigured(),
