@@ -270,6 +270,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
             custom_actions.AssertLastInstalledKernelInUse(),
             custom_actions.AssertLocalRepositoryNotPresent(),
             custom_actions.AssertNoRepositoryDuplicates(),
+            common_actions.AssertConfigurationConflictsResolved(["/etc/my.cnf"]),
             custom_actions.AssertMariadbRepoAvailable(),
             custom_actions.AssertModernPostgresRepositoryFilePresent(),
             common_actions.AssertNotInContainer(),
