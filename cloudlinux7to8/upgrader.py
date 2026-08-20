@@ -136,6 +136,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 ),
             ],
             "Prepare configurations": [
+                common_actions.RepairPleskInstallation(),  # Executed at the finish phase only
                 common_actions.RevertChangesInGrub(),
                 custom_actions.PrepareLeappConfigurationBackup(),
                 custom_actions.RemoveOldMigratorThirdparty(),
