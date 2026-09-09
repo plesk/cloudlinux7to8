@@ -179,7 +179,7 @@ class CloudLinux7to8Upgrader(DistUpgrader):
                 custom_actions.DisableSuspiciousKernelModules(),
                 common_actions.HandleUpdatedSpamassassinConfig(),
                 common_actions.DisableSelinuxDuringUpgrade(),
-                custom_actions.RestoreMissingNginx(),
+                common_actions.RestoreMissingNginx(),
                 common_actions.ReinstallAmavisAntivirus(),
                 custom_actions.HandleInternetxRepository(),
                 # We need to remove the python3-ethtool package because it causes issues on
